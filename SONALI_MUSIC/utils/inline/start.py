@@ -35,5 +35,9 @@ def private_panel(_):
         [
             InlineKeyboardButton("⌯ ʏᴛ-ᴀᴘɪ ⌯", callback_data="bot_info_data"),
         ],
+        [
+            InlineKeyboardButton("ᴄʟᴏɴᴇ", callback_data="CLONE_BTN"),
+            InlineKeyboardButton("ᴍᴀɴᴀɢᴇ ᴄʟᴏɴᴇ", callback_data="MANAGE_CLONE_BTN"),
+        ],
     ]
     return buttons

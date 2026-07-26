@@ -37,6 +37,14 @@ async def init():
     for all_module in ALL_MODULES:
         importlib.import_module("SONALI_MUSIC.plugins" + all_module)
     LOGGER("SONALI_MUSIC.plugins").info("𝐀𝐥𝐥 𝐅𝐞𝐚𝐭𝐮𝐫𝐞𝐬 𝐋𝐨𝐚𝐝𝐞𝐝 𝐁𝐚𝐛𝐲🥳...")
+
+    # Start Cloned Bots dynamically
+    from SONALI_MUSIC.core.clone_manager import clone_manager
+    try:
+        await clone_manager.start_all_clones()
+    except Exception as e:
+        LOGGER("SONALI_MUSIC").error(f"Failed to load cloned bots on startup: {e}")
+
     await userbot.start()
     await Sona.start()
     try:
@@ -55,6 +63,14 @@ async def init():
     await idle()
     await app.stop()
     await userbot.stop()
+
+    # Stop Cloned Bots dynamically
+    from SONALI_MUSIC.core.clone_manager import clone_manager
+    try:
+        await clone_manager.stop_all_clones()
+    except Exception as e:
+        LOGGER("SONALI_MUSIC").error(f"Failed to stop cloned bots cleanly: {e}")
+
     LOGGER("SONALI_MUSIC").info("𝗦𝗧𝗢𝗣 RAJ 𝗠𝗨𝗦𝗜𝗖 𝗕𝗢𝗧..")
 
 

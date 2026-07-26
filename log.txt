@@ -1,0 +1,7 @@
+[26-Jul-26 20:22:00 - INFO] - SONALI_MUSIC.core.mongo - Connecting to your Mongo Database...
+[26-Jul-26 20:22:00 - INFO] - SONALI_MUSIC.core.mongo - Connected to your Mongo Database.
+[26-Jul-26 20:22:00 - INFO] - SONALI_MUSIC.core.dir - Directories Updated.
+[26-Jul-26 20:22:00 - INFO] - SONALI_MUSIC.core.git - Git Client Found [VPS DEPLOYER]
+[26-Jul-26 20:22:00 - INFO] - SONALI_MUSIC.misc - 𝗗𝗔𝗧𝗔𝗕𝗔𝗦𝗘 𝗟𝗢𝗔𝗗𝗘𝗗 𝗕𝗢𝗦𝗦
+[26-Jul-26 20:22:00 - INFO] - SONALI_MUSIC.core.bot - Starting Bot...
+[26-Jul-26 20:22:01 - ERROR] - SONALI_MUSIC.core.assistant_pool - Assistant 1 health check failed: unpack requires a buffer of 271 bytes
