@@ -89,6 +89,123 @@ async def list_clones_cmd(client, message: Message):
 
     await message.reply_text(text)
 
+
+@app.on_message(filters.command(["delete_clone", "remove_clone"]) & filters.user(config.OWNER_ID))
+async def delete_clone_by_owner_cmd(client, message: Message):
+    parts = message.text.split()
+    if len(parts) < 2:
+        return await message.reply_text("❓ **Usage:** `/delete_clone [bot_id]`\n*You can get bot_id from /clones_list*")
+
+    try:
+        bot_id = int(parts[1])
+    except ValueError:
+        return await message.reply_text("❌ Bot ID must be a valid integer.")
+
+    clone = await get_all_clones()
+    target = next((c for c in clone if c.get("bot_id") == bot_id), None)
+    if not target:
+        return await message.reply_text("❌ Clone bot not found in the database.")
+
+    from SONALI_MUSIC.utils.database_clone import delete_clone_bot
+    # Stop clone inside manager
+    await clone_manager.stop_clone(bot_id)
+    # Remove from DB
+    await delete_clone_bot(bot_id)
+
+    await message.reply_text(f"✅ **Clone @{target.get('bot_username')} has been successfully deleted & stopped.**")
+    await log_audit_trail(config.OWNER_ID, "owner_clone_deleted", f"Owner deleted cloned bot {bot_id} (@{target.get('bot_username')})")
+
+
+@app.on_message(filters.command(["clone_ban"]) & filters.user(config.OWNER_ID))
+async def clone_ban_cmd(client, message: Message):
+    parts = message.text.split()
+    if len(parts) < 2:
+        return await message.reply_text("❓ **Usage:** `/clone_ban [user_id]`")
+
+    try:
+        user_id = int(parts[1])
+    except ValueError:
+        return await message.reply_text("❌ User ID must be a valid integer.")
+
+    from SONALI_MUSIC.utils.database import add_banned_user
+    from config import BANNED_USERS
+
+    await add_banned_user(user_id)
+    BANNED_USERS.add(user_id)
+    await message.reply_text(f"✅ **User `{user_id}` has been globally banned from all cloned bots and main bot.**")
+    await log_audit_trail(config.OWNER_ID, "clone_ban", f"Banned user {user_id} globally.")
+
+
+@app.on_message(filters.command(["clone_unban"]) & filters.user(config.OWNER_ID))
+async def clone_unban_cmd(client, message: Message):
+    parts = message.text.split()
+    if len(parts) < 2:
+        return await message.reply_text("❓ **Usage:** `/clone_unban [user_id]`")
+
+    try:
+        user_id = int(parts[1])
+    except ValueError:
+        return await message.reply_text("❌ User ID must be a valid integer.")
+
+    from SONALI_MUSIC.utils.database import remove_banned_user
+    from config import BANNED_USERS
+
+    await remove_banned_user(user_id)
+    if user_id in BANNED_USERS:
+        BANNED_USERS.remove(user_id)
+    await message.reply_text(f"✅ **User `{user_id}` has been unbanned successfully.**")
+    await log_audit_trail(config.OWNER_ID, "clone_unban", f"Unbanned user {user_id} globally.")
+
+
+@app.on_message(filters.command(["set_clone_limit"]) & filters.user(config.OWNER_ID))
+async def set_clone_limit_cmd(client, message: Message):
+    parts = message.text.split()
+    if len(parts) < 3:
+        return await message.reply_text("❓ **Usage:** `/set_clone_limit [user_id] [limit]`")
+
+    try:
+        user_id = int(parts[1])
+        limit = int(parts[2])
+    except ValueError:
+        return await message.reply_text("❌ User ID and limit must be valid integers.")
+
+    from SONALI_MUSIC.utils.database_clone import set_user_clone_limit
+    await set_user_clone_limit(user_id, limit)
+    await message.reply_text(f"✅ **Custom clone limit of `{limit}` set successfully for user `{user_id}`.**")
+    await log_audit_trail(config.OWNER_ID, "set_clone_limit", f"Set clone limit for user {user_id} to {limit}.")
+
+
+@app.on_message(filters.command(["clones_stats", "clone_stats"]) & filters.user(config.OWNER_ID))
+async def clones_stats_cmd(client, message: Message):
+    clones = await get_all_clones()
+    total = len(clones)
+    active_clones = sum(1 for c in clones if c.get("status") == "active")
+    paused_clones = total - active_clones
+
+    cpu = psutil.cpu_percent()
+    ram = psutil.virtual_memory().percent
+
+    text = (
+        f"📊 **{to_smallcap('clone platform stats')}**\n\n"
+        f"🤖 **Total Cloned Bots:** {total}\n"
+        f" ├ ⚡ **Active:** {active_clones}\n"
+        f" └ ⏸️ **Paused:** {paused_clones}\n\n"
+        f"🖥️ **System Resource Usage:**\n"
+        f" ├ 🧠 **CPU:** {cpu}%\n"
+        f" └ 📼 **RAM:** {ram}%\n"
+    )
+    await message.reply_text(text)
+
+
+@app.on_message(filters.command(["restart_clones", "reboot_clones"]) & filters.user(config.OWNER_ID))
+async def restart_clones_cmd(client, message: Message):
+    status_msg = await message.reply_text("🔄 **Stopping all cloned bots dynamically...**")
+    await clone_manager.stop_all_clones()
+    await status_msg.edit_text("🚀 **Restarting all cloned bots dynamically...**")
+    await clone_manager.start_all_clones()
+    await status_msg.edit_text("✅ **All cloned bots have been restarted successfully!**")
+    await log_audit_trail(config.OWNER_ID, "restart_clones", "Restarted all cloned bot instances.")
+
 # ----------------------------------------------------------------------
 # 2. OWNER GLOBAL BROADCAST ENGINE WITH RETRIES & ANTI-SPAM
 # ----------------------------------------------------------------------

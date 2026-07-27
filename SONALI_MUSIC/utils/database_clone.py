@@ -46,17 +46,18 @@ async def check_premium_access(user_id: int) -> Dict:
     """
     user = await get_premium_user(user_id)
     if not user:
-        return {"has_premium": False, "plan": "free", "permissions": {}}
+        return {"has_premium": False, "plan": "free", "permissions": {"limits": 1}}
 
     expires_at = user.get("expires_at", 0)
     current_time = int(time.time())
 
+    plan = user.get("plan", "free")
+    custom_limit = user.get("custom_limit")
+
     if expires_at != 0 and current_time > expires_at:
         # Plan expired
         await premium_db.update_one({"user_id": user_id}, {"$set": {"status": "expired"}})
-        return {"has_premium": False, "plan": "free", "permissions": {}}
-
-    plan = user.get("plan", "free")
+        plan = "free"
 
     # Permissions matrix based on plan
     permissions = {}
@@ -66,13 +67,27 @@ async def check_premium_access(user_id: int) -> Dict:
         permissions = {"custom_assistant": True, "custom_metadata": True, "limits": 5}
     elif plan == "elite":
         permissions = {"custom_assistant": True, "custom_metadata": True, "limits": 9999}
+    else:
+        permissions = {"custom_assistant": False, "custom_metadata": False, "limits": 1}
+
+    if custom_limit is not None:
+        permissions["limits"] = custom_limit
 
     return {
-        "has_premium": plan != "free",
+        "has_premium": plan != "free" or custom_limit is not None,
         "plan": plan,
         "expires_at": expires_at,
         "permissions": permissions
     }
+
+async def set_user_clone_limit(user_id: int, limit: int) -> bool:
+    """Sets a custom clone limit for a user."""
+    await premium_db.update_one(
+        {"user_id": user_id},
+        {"$set": {"custom_limit": limit}},
+        upsert=True
+    )
+    return True
 
 # ----------------------------------------------------------------------
 # 2. CLONE CONTROLS
