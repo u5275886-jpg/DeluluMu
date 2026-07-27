@@ -146,6 +146,13 @@ class CloneManager:
             # Register copied handlers
             self.register_handlers_on_clone(clone_client)
 
+            # Set default commands on clone bot automatically
+            try:
+                from SONALI_MUSIC.utils.functions import set_default_commands
+                await set_default_commands(clone_client)
+            except Exception as e:
+                logger.error(f"Error setting default commands for clone @{me.username}: {e}")
+
             self.clones[me.id] = clone_client
             await update_clone_status(me.id, "active")
 

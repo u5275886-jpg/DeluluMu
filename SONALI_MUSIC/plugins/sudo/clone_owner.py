@@ -350,3 +350,35 @@ async def init_web_api():
 
 # Start the web server in background
 asyncio.create_task(init_web_api())
+
+
+# ----------------------------------------------------------------------
+# 4. SET FORCE JOIN FOR CLONING (/SETFS)
+# ----------------------------------------------------------------------
+
+@app.on_message(filters.command(["setfs"]) & filters.user(config.OWNER_ID))
+async def set_force_sub_cmd(client, message: Message):
+    parts = message.text.split()
+    if len(parts) < 2:
+        from SONALI_MUSIC.utils.database_clone import get_force_sub
+        current = await get_force_sub()
+        current_status = f"@{current}" if current else "Disabled"
+        return await message.reply_text(
+            f"❓ **Usage:** `/setfs [channel_username/none]`\n\n"
+            f"Current Channel: **{current_status}**\n\n"
+            f"Example: `/setfs kriti_bot_update` or `/setfs none` to disable."
+        )
+
+    channel = parts[1].strip()
+    if channel.lower() in ["none", "off", "disable"]:
+        from SONALI_MUSIC.utils.database_clone import set_force_sub
+        await set_force_sub(None)
+        await message.reply_text("✅ **Force subscription for cloning has been disabled.**")
+        await log_audit_trail(config.OWNER_ID, "set_force_sub", "Disabled force subscription.")
+    else:
+        if channel.startswith("@"):
+            channel = channel[1:]
+        from SONALI_MUSIC.utils.database_clone import set_force_sub
+        await set_force_sub(channel)
+        await message.reply_text(f"✅ **Force subscription channel for cloning set to:** @{channel}")
+        await log_audit_trail(config.OWNER_ID, "set_force_sub", f"Set force sub channel to @{channel}")

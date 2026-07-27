@@ -41,6 +41,7 @@ These commands are strictly reserved for the platform Owner (`OWNER_ID`):
 *   `/clones_stats` - View real-time resource utilization (CPU, RAM) and total active/paused clones.
 *   `/restart_clones` - Dynamically stop and restart all active clones in memory.
 *   `/broadcast_clones [message]` - Broadcast an administrative global alert to all active cloned bots.
+*   `/setfs [channel_username/none]` - Set a mandatory channel force subscription that users must join before they can clone a bot (or `/setfs none` to disable).
 
 ### 🛡️ User Moderation
 *   `/clone_ban [user_id]` - Globally ban a user from accessing all cloned bots and the main bot.

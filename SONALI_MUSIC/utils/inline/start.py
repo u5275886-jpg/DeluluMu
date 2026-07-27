@@ -17,11 +17,22 @@ def start_panel(_):
 
 
 async def private_panel(_, bot_id=None):
-    if bot_id:
+    bot_username = app.username
+    owner_link = f"https://t.me/{config.OWNER_USERNAME}"
+
+    if bot_id and bot_id != app.id:
         try:
             from SONALI_MUSIC.utils.database_clone import get_clone_by_id
             clone = await get_clone_by_id(bot_id)
             if clone:
+                bot_username = clone.get("bot_username") or app.username
+                tenant_id = clone.get("tenant_id")
+                tenant_username = clone.get("tenant_username")
+                if tenant_username:
+                    owner_link = f"https://t.me/{tenant_username}"
+                else:
+                    owner_link = f"tg://user?id={tenant_id}"
+
                 custom_buttons = clone.get("settings", {}).get("custom_buttons", [])
                 if custom_buttons and len(custom_buttons) > 0:
                     buttons = []
@@ -30,7 +41,7 @@ async def private_panel(_, bot_id=None):
                         b_type = btn.get("type", "url")
                         b_val = btn.get("value", "")
                         if b_type == "url":
-                            if not (b_val.startswith("http://") or b_val.startswith("https://")):
+                            if not (b_val.startswith("http://") or b_val.startswith("https://") or b_val.startswith("tg://")):
                                 b_val = "https://" + b_val
                             buttons.append([InlineKeyboardButton(text=b_text, url=b_val)])
                         else:
@@ -43,7 +54,7 @@ async def private_panel(_, bot_id=None):
         [
             InlineKeyboardButton(
                 text=_["S_B_3"],
-                url=f"https://t.me/{app.username}?startgroup=true",
+                url=f"https://t.me/{bot_username}?startgroup=true",
             )
         ],
         [
@@ -51,7 +62,7 @@ async def private_panel(_, bot_id=None):
             InlineKeyboardButton(text=_["S_B_4"], callback_data="MAIN_CP"),
         ],
         [
-            InlineKeyboardButton(text=_["S_B_5"], url=f"https://t.me/{config.OWNER_USERNAME}"),
+            InlineKeyboardButton(text=_["S_B_5"], url=owner_link),
             InlineKeyboardButton("⌯ ᴧʙσυт ⌯", callback_data="ALLBOT_CP"),
         ],
         [

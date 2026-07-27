@@ -28,6 +28,12 @@ def to_smallcap(text: str) -> str:
 # user_id -> {"action": str, "bot_id": int}
 user_states = {}
 
+async def check_premium_or_owner(user_id: int) -> bool:
+    if user_id == config.OWNER_ID:
+        return True
+    premium_status = await check_premium_access(user_id)
+    return premium_status.get("has_premium", False)
+
 # Reusable detailed control panel
 async def send_bot_details_panel(chat_id, bot_id, reply_to_message_id=None, query=None):
     clone = await get_clone_by_id(bot_id)
@@ -77,10 +83,11 @@ async def send_bot_details_panel(chat_id, bot_id, reply_to_message_id=None, quer
             InlineKeyboardButton("🔘 ᴍᴀɴᴀɢᴇ ɪɴʟɪɴᴇ ʙᴜᴛᴛᴏɴs", callback_data=f"MANAGE_CUST_BTNS_{bot_id}")
         ],
         [
-            InlineKeyboardButton("📥 ᴘʟᴀʏ ᴘʀᴇғᴇʀᴇɴᴄᴇ", callback_data=f"EDIT_PLAY_{bot_id}"),
-            InlineKeyboardButton("🔄 ǫᴜᴇᴜᴇ ʙᴇʜᴀᴠɪᴏʀ", callback_data=f"EDIT_QUEUE_{bot_id}")
+            InlineKeyboardButton("📝 ᴄʜᴀɴɢᴇ ᴄᴧᴘᴛɪᴏɴs", callback_data=f"EDIT_CAPTIONS_SUB_{bot_id}_1"),
+            InlineKeyboardButton("📥 ᴘʟᴀʏ ᴘʀᴇғᴇʀᴇɴᴄᴇ", callback_data=f"EDIT_PLAY_{bot_id}")
         ],
         [
+            InlineKeyboardButton("🔄 ǫᴜᴇᴜᴇ ʙᴇʜᴀᴠɪᴏʀ", callback_data=f"EDIT_QUEUE_{bot_id}"),
             InlineKeyboardButton("⚠️ ᴅᴇʟᴇᴛᴇ ᴄʟᴏɴᴇ", callback_data=f"DELETE_CONFIRM_{bot_id}")
         ],
         [
@@ -114,6 +121,28 @@ async def clone_cmd_handler(client, message: Message):
         )
 
     bot_token = parts[1].strip()
+
+    # CHECK FORCE SUBSCRIBE FIRST
+    from SONALI_MUSIC.utils.database_clone import get_force_sub
+    force_sub_channel = await get_force_sub()
+    if force_sub_channel:
+        try:
+            await app.get_chat_member(force_sub_channel, user_id)
+        except Exception:
+            link = f"https://t.me/{force_sub_channel}"
+            return await message.reply_text(
+                f"⚠️ **{to_smallcap('force subscription required')}**\n\n"
+                f"You must join our updates channel first before you can clone a bot!\n\n"
+                f"Please join @{force_sub_channel} and try again.",
+                reply_markup=InlineKeyboardMarkup(
+                    [
+                        [
+                            InlineKeyboardButton("📢 Join Channel", url=link)
+                        ]
+                    ]
+                )
+            )
+
     status_msg = await message.reply_text("🔍 **Checking bot token...**")
 
     # Check limits
@@ -151,7 +180,8 @@ async def clone_cmd_handler(client, message: Message):
         bot_token=bot_token,
         bot_id=bot_info.id,
         bot_name=bot_info.first_name,
-        bot_username=bot_info.username
+        bot_username=bot_info.username,
+        tenant_username=message.from_user.username
     )
 
     if success:
@@ -254,6 +284,26 @@ async def manage_bot_details_panel(client, query: CallbackQuery):
     is_owner = (user_id == config.OWNER_ID)
     if not is_owner and clone.get("tenant_id") != user_id:
         return await query.answer("Access Denied.", show_alert=True)
+
+    # PREMIUM VERIFICATION CHECK
+    if not await check_premium_or_owner(user_id):
+        await query.message.edit_text(
+            f"⚠️ **{to_smallcap('premium required')}**\n\n"
+            f"You need a premium subscription to customize and manage your cloned bot's settings.\n\n"
+            f"Please contact the owner to buy premium:\n"
+            f"👤 **Owner:** @Xbroze",
+            reply_markup=InlineKeyboardMarkup(
+                [
+                    [
+                        InlineKeyboardButton("💬 Buy Premium", url="https://t.me/Xbroze")
+                    ],
+                    [
+                        InlineKeyboardButton("🔙 Back", callback_data="MANAGE_CLONE_BTN")
+                    ]
+                ]
+            )
+        )
+        return await query.answer()
 
     await send_bot_details_panel(user_id, bot_id, query=query)
     await query.answer()
@@ -730,6 +780,29 @@ async def handle_user_input_state(client, message: Message):
 
         await message.reply_text(f"✅ **Play Message Text successfully updated.**")
         await send_bot_details_panel(user_id, bot_id)
+
+    elif action.startswith("wait_for_help_text_"):
+        key = action.replace("wait_for_help_text_", "")
+        new_val = message.text.strip() if message.text else ""
+
+        if not new_val:
+            return await message.reply_text("❌ **Text cannot be empty! Please send a valid text.**")
+
+        help_texts = settings.get("help_texts", {})
+        if new_val.lower() == "/reset":
+            if key in help_texts:
+                del help_texts[key]
+            await message.reply_text(f"✅ **Restored default text for {key}!**")
+        else:
+            help_texts[key] = new_val
+            await message.reply_text(f"✅ **Successfully updated custom caption/text!**")
+
+        settings["help_texts"] = help_texts
+        await update_clone_settings(bot_id, settings)
+        del user_states[user_id]
+
+        await send_bot_details_panel(user_id, bot_id)
+        return
 
     elif action == "wait_for_custom_session":
         session_string = message.text.strip()
@@ -1341,3 +1414,226 @@ async def custom_button_trigger_callback(client, query: CallbackQuery):
         await query.message.reply_text(b_val)
     else:
         await query.answer()
+
+
+# ----------------------------------------------------------------------
+# 6. HELP CAPTIONS AND TEXTS CUSTOMIZATION ENGINE
+# ----------------------------------------------------------------------
+
+HELP_KEYS_MAP = {
+    "about": "About / All Bot Text",
+    "main_help": "Main Help Page Text",
+    "help_01": "ChatGPT Help Text",
+    "help_02": "Search Help Text",
+    "help_03": "Whisper/TTS Help Text",
+    "help_04": "Info Help Text",
+    "help_05": "Fonts Help Text",
+    "help_06": "Math Help Text",
+    "help_07": "Tagall Help Text",
+    "help_10": "Stickers Help Text",
+    "help_11": "Fun Help Text",
+    "help_12": "Quotly Help Text",
+    "help_13": "Truth/Dare Help Text",
+    "help_14": "Admin Ban Help Text",
+    "help_24": "Translate Help Text",
+    "help_25": "Github Help Text",
+    "help_26": "Telegraph Help Text",
+    "promotion": "Promotion Page Text",
+    "help_17": "Setup Help Text",
+    "hb1": "Music Admin Help Text",
+    "hb2": "Music Auth Help Text",
+    "hb3": "Music G-Cast Help Text",
+    "hb4": "Music BL-Chat Help Text",
+    "hb5": "Music BL-User Help Text",
+    "hb6": "Music C-Play Help Text",
+    "hb7": "Music G-Ban Help Text",
+    "hb8": "Music Loop Help Text",
+    "hb9": "Music Log Help Text",
+    "hb10": "Music Ping Help Text",
+    "hb11": "Music Play Help Text",
+    "hb12": "Music Shuffle Help Text",
+    "hb13": "Music Seek Help Text",
+    "hb14": "Music Song Help Text",
+    "hb15": "Music Speed Help Text"
+}
+
+@app.on_callback_query(filters.regex("^EDIT_CAPTIONS_SUB_(\\d+)_(\\d+)$"))
+async def edit_captions_sub_callback(client, query: CallbackQuery):
+    parts = query.data.split("_")
+    bot_id = int(parts[3])
+    page = int(parts[4])
+    user_id = query.from_user.id
+
+    if not await check_premium_or_owner(user_id):
+        return await query.answer("Premium required! Contact @Xbroze to buy premium.", show_alert=True)
+
+    clone = await get_clone_by_id(bot_id)
+    if not clone:
+        return await query.answer("Clone not found.", show_alert=True)
+
+    buttons = []
+    if page == 1:
+        text = "📝 **『 ᴄᴧᴘᴛɪᴏɴs ᴄᴏɴғɪɢᴜʀᴀᴛɪᴏɴ - ᴘᴀɢᴇ 1 』**\n\nSelect a caption or help section text below to customize it for your cloned bot:"
+        buttons = [
+            [
+                InlineKeyboardButton("ℹ️ About Text", callback_data=f"EDIT_HELP_KEY_{bot_id}_about"),
+                InlineKeyboardButton("🤖 Main Help Text", callback_data=f"EDIT_HELP_KEY_{bot_id}_main_help"),
+            ],
+            [
+                InlineKeyboardButton("💬 ChatGPT Help", callback_data=f"EDIT_HELP_KEY_{bot_id}_help_01"),
+                InlineKeyboardButton("🔍 Search Help", callback_data=f"EDIT_HELP_KEY_{bot_id}_help_02"),
+            ],
+            [
+                InlineKeyboardButton("🎙️ Whisper Help", callback_data=f"EDIT_HELP_KEY_{bot_id}_help_03"),
+            ],
+            [
+                InlineKeyboardButton("➡️ Page 2", callback_data=f"EDIT_CAPTIONS_SUB_{bot_id}_2")
+            ]
+        ]
+    elif page == 2:
+        text = "📝 **『 ᴄᴧᴘᴛɪᴏɴs ᴄᴏɴғɪɢᴜʀᴀᴛɪᴏɴ - ᴘᴀɢᴇ 2 』**\n\nSelect a caption or help section text below to customize it for your cloned bot:"
+        buttons = [
+            [
+                InlineKeyboardButton("ℹ️ Info Help", callback_data=f"EDIT_HELP_KEY_{bot_id}_help_04"),
+                InlineKeyboardButton("🔤 Fonts Help", callback_data=f"EDIT_HELP_KEY_{bot_id}_help_05"),
+            ],
+            [
+                InlineKeyboardButton("➕ Math Help", callback_data=f"EDIT_HELP_KEY_{bot_id}_help_06"),
+                InlineKeyboardButton("🏷️ Tagall Help", callback_data=f"EDIT_HELP_KEY_{bot_id}_help_07"),
+            ],
+            [
+                InlineKeyboardButton("🖼️ Stickers Help", callback_data=f"EDIT_HELP_KEY_{bot_id}_help_10"),
+            ],
+            [
+                InlineKeyboardButton("⬅️ Page 1", callback_data=f"EDIT_CAPTIONS_SUB_{bot_id}_1"),
+                InlineKeyboardButton("➡️ Page 3", callback_data=f"EDIT_CAPTIONS_SUB_{bot_id}_3")
+            ]
+        ]
+    elif page == 3:
+        text = "📝 **『 ᴄᴧᴘᴛɪᴏɴs ᴄᴏɴғɪɢᴜʀᴀᴛɪᴏɴ - ᴘᴀɢᴇ 3 』**\n\nSelect a caption or help section text below to customize it for your cloned bot:"
+        buttons = [
+            [
+                InlineKeyboardButton("🎯 Fun Help", callback_data=f"EDIT_HELP_KEY_{bot_id}_help_11"),
+                InlineKeyboardButton("💬 Quotly Help", callback_data=f"EDIT_HELP_KEY_{bot_id}_help_12"),
+            ],
+            [
+                InlineKeyboardButton("🎲 Truth/Dare Help", callback_data=f"EDIT_HELP_KEY_{bot_id}_help_13"),
+                InlineKeyboardButton("🚫 Admin/Ban Help", callback_data=f"EDIT_HELP_KEY_{bot_id}_help_14"),
+            ],
+            [
+                InlineKeyboardButton("🌐 Translate Help", callback_data=f"EDIT_HELP_KEY_{bot_id}_help_24"),
+            ],
+            [
+                InlineKeyboardButton("⬅️ Page 2", callback_data=f"EDIT_CAPTIONS_SUB_{bot_id}_2"),
+                InlineKeyboardButton("➡️ Page 4", callback_data=f"EDIT_CAPTIONS_SUB_{bot_id}_4")
+            ]
+        ]
+    elif page == 4:
+        text = "📝 **『 ᴄᴧᴘᴛɪᴏɴs ᴄᴏɴғɪɢᴜʀᴀᴛɪᴏɴ - ᴘᴀɢᴇ 4 』**\n\nSelect a caption or help text below to customize:"
+        buttons = [
+            [
+                InlineKeyboardButton("💻 Github Help", callback_data=f"EDIT_HELP_KEY_{bot_id}_help_25"),
+                InlineKeyboardButton("🔗 Telegraph Help", callback_data=f"EDIT_HELP_KEY_{bot_id}_help_26"),
+            ],
+            [
+                InlineKeyboardButton("📢 Promotion Text", callback_data=f"EDIT_HELP_KEY_{bot_id}_promotion"),
+                InlineKeyboardButton("⚙️ Setup Help", callback_data=f"EDIT_HELP_KEY_{bot_id}_help_17"),
+            ],
+            [
+                InlineKeyboardButton("⬅️ Page 3", callback_data=f"EDIT_CAPTIONS_SUB_{bot_id}_3"),
+                InlineKeyboardButton("➡️ Page 5", callback_data=f"EDIT_CAPTIONS_SUB_{bot_id}_5")
+            ]
+        ]
+    elif page == 5:
+        text = "📝 **『 ᴄᴧᴘᴛɪᴏɴs ᴄᴏɴғɪɢᴜʀᴀᴛɪᴏɴ - ᴘᴀɢᴇ 5 』**\n\nSelect a music help caption to edit:"
+        buttons = [
+            [
+                InlineKeyboardButton("🛡️ Music Admin", callback_data=f"EDIT_HELP_KEY_{bot_id}_hb1"),
+                InlineKeyboardButton("🔑 Music Auth", callback_data=f"EDIT_HELP_KEY_{bot_id}_hb2"),
+            ],
+            [
+                InlineKeyboardButton("📢 Music G-Cast", callback_data=f"EDIT_HELP_KEY_{bot_id}_hb3"),
+                InlineKeyboardButton("💬 Music BL-Chat", callback_data=f"EDIT_HELP_KEY_{bot_id}_hb4"),
+            ],
+            [
+                InlineKeyboardButton("👤 Music BL-User", callback_data=f"EDIT_HELP_KEY_{bot_id}_hb5"),
+            ],
+            [
+                InlineKeyboardButton("⬅️ Page 4", callback_data=f"EDIT_CAPTIONS_SUB_{bot_id}_4"),
+                InlineKeyboardButton("➡️ Page 6", callback_data=f"EDIT_CAPTIONS_SUB_{bot_id}_6")
+            ]
+        ]
+    elif page == 6:
+        text = "📝 **『 ᴄᴧᴘᴛɪᴏɴs ᴄᴏɴғɪɢᴜʀᴀᴛɪᴏɴ - ᴘᴀɢᴇ 6 』**\n\nSelect a music help caption to edit:"
+        buttons = [
+            [
+                InlineKeyboardButton("📺 Music C-Play", callback_data=f"EDIT_HELP_KEY_{bot_id}_hb6"),
+                InlineKeyboardButton("🚫 Music G-Ban", callback_data=f"EDIT_HELP_KEY_{bot_id}_hb7"),
+            ],
+            [
+                InlineKeyboardButton("🔁 Music Loop", callback_data=f"EDIT_HELP_KEY_{bot_id}_hb8"),
+                InlineKeyboardButton("📝 Music Log", callback_data=f"EDIT_HELP_KEY_{bot_id}_hb9"),
+            ],
+            [
+                InlineKeyboardButton("⚡ Music Ping", callback_data=f"EDIT_HELP_KEY_{bot_id}_hb10"),
+            ],
+            [
+                InlineKeyboardButton("⬅️ Page 5", callback_data=f"EDIT_CAPTIONS_SUB_{bot_id}_5"),
+                InlineKeyboardButton("➡️ Page 7", callback_data=f"EDIT_CAPTIONS_SUB_{bot_id}_7")
+            ]
+        ]
+    else: # Page 7
+        text = "📝 **『 ᴄᴧᴘᴛɪᴏɴs ᴄᴏɴғɪɢᴜʀᴀᴛɪᴏɴ - ᴘᴀɢᴇ 7 』**\n\nSelect a music help caption to edit:"
+        buttons = [
+            [
+                InlineKeyboardButton("🎵 Music Play", callback_data=f"EDIT_HELP_KEY_{bot_id}_hb11"),
+                InlineKeyboardButton("🔀 Music Shuffle", callback_data=f"EDIT_HELP_KEY_{bot_id}_hb12"),
+            ],
+            [
+                InlineKeyboardButton("⏩ Music Seek", callback_data=f"EDIT_HELP_KEY_{bot_id}_hb13"),
+                InlineKeyboardButton("🎶 Music Song", callback_data=f"EDIT_HELP_KEY_{bot_id}_hb14"),
+            ],
+            [
+                InlineKeyboardButton("🏃 Music Speed", callback_data=f"EDIT_HELP_KEY_{bot_id}_hb15"),
+            ],
+            [
+                InlineKeyboardButton("⬅️ Page 6", callback_data=f"EDIT_CAPTIONS_SUB_{bot_id}_6")
+            ]
+        ]
+
+    buttons.append([
+        InlineKeyboardButton("🔙 Back to Main Menu", callback_data=f"MANAGE_BOT_{bot_id}")
+    ])
+
+    await query.message.edit_text(text, reply_markup=InlineKeyboardMarkup(buttons))
+    await query.answer()
+
+
+@app.on_callback_query(filters.regex("^EDIT_HELP_KEY_(\\d+)_(.+)$"))
+async def edit_help_key_callback(client, query: CallbackQuery):
+    parts = query.data.split("_")
+    bot_id = int(parts[3])
+    key = parts[4]
+    user_id = query.from_user.id
+
+    if not await check_premium_or_owner(user_id):
+        return await query.answer("Premium required! Contact @Xbroze to buy premium.", show_alert=True)
+
+    clone = await get_clone_by_id(bot_id)
+    if not clone:
+        return await query.answer("Clone not found.", show_alert=True)
+
+    key_name = HELP_KEYS_MAP.get(key, key)
+    current_val = clone.get("settings", {}).get("help_texts", {}).get(key, "Default (not customized)")
+
+    user_states[user_id] = {"action": f"wait_for_help_text_{key}", "bot_id": bot_id}
+
+    prompt = (
+        f"📝 **『 ᴇᴅɪᴛ ᴄᴧᴘᴛɪᴏɴ: {key_name} 』**\n\n"
+        f"🔍 **Current Customization:**\n"
+        f"`{current_val}`\n\n"
+        f"Please send the **NEW** text message for this section.\n"
+        f"Send `/cancel` to abort or `/reset` to restore the default text."
+    )
+    await query.message.reply_text(prompt)
+    await query.answer()
