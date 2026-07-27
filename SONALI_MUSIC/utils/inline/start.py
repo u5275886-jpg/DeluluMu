@@ -16,7 +16,29 @@ def start_panel(_):
     return buttons
 
 
-def private_panel(_):
+async def private_panel(_, bot_id=None):
+    if bot_id:
+        try:
+            from SONALI_MUSIC.utils.database_clone import get_clone_by_id
+            clone = await get_clone_by_id(bot_id)
+            if clone:
+                custom_buttons = clone.get("settings", {}).get("custom_buttons", [])
+                if custom_buttons:
+                    buttons = []
+                    for idx, btn in enumerate(custom_buttons):
+                        b_text = btn.get("text", "Button")
+                        b_type = btn.get("type", "url")
+                        b_val = btn.get("value", "")
+                        if b_type == "url":
+                            if not (b_val.startswith("http://") or b_val.startswith("https://")):
+                                b_val = "https://" + b_val
+                            buttons.append([InlineKeyboardButton(text=b_text, url=b_val)])
+                        else:
+                            buttons.append([InlineKeyboardButton(text=b_text, callback_data=f"CLONE_CUST_BTN_{bot_id}_{idx}")])
+                    return buttons
+        except Exception:
+            pass
+
     buttons = [
         [
             InlineKeyboardButton(
