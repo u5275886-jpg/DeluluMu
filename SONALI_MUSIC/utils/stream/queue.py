@@ -23,6 +23,12 @@ async def put_queue(
         duration_in_seconds = time_to_seconds(duration) - 3
     except:
         duration_in_seconds = 0
+    try:
+        from SONALI_MUSIC import app
+        active_bot_id = app.id
+    except Exception:
+        active_bot_id = None
+
     put = {
         "title": title,
         "dur": duration,
@@ -34,6 +40,7 @@ async def put_queue(
         "vidid": vidid,
         "seconds": duration_in_seconds,
         "played": 0,
+        "bot_id": active_bot_id,
     }
     if forceplay:
         check = db.get(chat_id)
@@ -69,6 +76,12 @@ async def put_queue_index(
             dur = 0
     else:
         dur = 0
+    try:
+        from SONALI_MUSIC import app
+        active_bot_id = app.id
+    except Exception:
+        active_bot_id = None
+
     put = {
         "title": title,
         "dur": duration,
@@ -79,6 +92,7 @@ async def put_queue_index(
         "vidid": vidid,
         "seconds": dur,
         "played": 0,
+        "bot_id": active_bot_id,
     }
     if forceplay:
         check = db.get(chat_id)

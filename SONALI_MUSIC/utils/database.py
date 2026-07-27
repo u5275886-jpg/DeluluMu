@@ -516,6 +516,14 @@ async def get_served_users() -> list:
 
 
 async def add_served_user(user_id: int):
+    try:
+        from SONALI_MUSIC import app
+        from SONALI_MUSIC.utils.database_clone import add_cloned_served_user
+        # app.id automatically resolves to active clone bot id or main bot id
+        await add_cloned_served_user(app.id, user_id)
+    except Exception:
+        pass
+
     is_served = await is_served_user(user_id)
     if is_served:
         return
@@ -537,6 +545,14 @@ async def is_served_chat(chat_id: int) -> bool:
 
 
 async def add_served_chat(chat_id: int):
+    try:
+        from SONALI_MUSIC import app
+        from SONALI_MUSIC.utils.database_clone import add_cloned_served_chat
+        # app.id automatically resolves to active clone bot id or main bot id
+        await add_cloned_served_chat(app.id, chat_id)
+    except Exception:
+        pass
+
     is_served = await is_served_chat(chat_id)
     if is_served:
         return
