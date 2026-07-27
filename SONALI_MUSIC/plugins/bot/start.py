@@ -114,10 +114,28 @@ async def start_pm(client, message: Message, _):
         await baby.edit_text(f"**__ʙσᴛ sᴛᴧʀᴛєᴅ....💤__**")
         await baby.edit_text(f"**__ʙσᴛ sᴛᴧʀᴛєᴅ.....💤__**")
         await baby.delete()
+
+        # Context-aware welcome customization for Cloned bot
+        welcome_img = random.choice(NEXIO)
+        welcome_caption = _["start_2"].format(message.from_user.mention, app.mention)
+
+        try:
+            from SONALI_MUSIC.utils.database_clone import get_clone_by_id
+            clone = await get_clone_by_id(client.me.id)
+            if clone:
+                settings = clone.get("settings", {})
+                cust_img = settings.get("welcome_img")
+                cust_text = settings.get("welcome_text")
+                if cust_img:
+                    welcome_img = cust_img
+                if cust_text:
+                    welcome_caption = cust_text.replace("{user}", message.from_user.first_name).replace("{mention}", message.from_user.mention)
+        except Exception as e:
+            print(f"Error loading clone welcome customization: {e}")
         
         await message.reply_photo(
-            random.choice(NEXIO),
-            caption=_["start_2"].format(message.from_user.mention, app.mention),
+            welcome_img,
+            caption=welcome_caption,
             reply_markup=InlineKeyboardMarkup(out),
             has_spoiler=True,
         )

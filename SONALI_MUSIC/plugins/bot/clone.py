@@ -40,6 +40,11 @@ async def send_bot_details_panel(chat_id, bot_id, reply_to_message_id=None, quer
     assistant_mode = clone.get("assistant_mode", "system").upper()
     assistant_id = clone.get("assistant_id", 1)
 
+    welcome_text = settings.get('welcome_text', 'Welcome to my cloned music player bot!')
+    welcome_img = settings.get('welcome_img', 'https://litter.catbox.moe/xr9jf82b2umeke7j.jpg')
+    play_img = settings.get('play_img', 'https://graph.org/file/4fb9a698630aa5b47be05-060979d72b7752fc8f.jpg')
+    play_text = settings.get('play_text', '🎀 **Started Streaming**\n\n🩶 **Title:** {title}\n🪐 **Duration:** {duration} minutes\n🎧 **Requested by:** {user}\n\n🎀 **Powered By:** @{bot_username}')
+
     text = (
         f"🌌 **『 {clone.get('bot_name')} - ᴄʟᴏɴᴇ ᴄᴏɴᴛʀᴏʟ ᴘᴀɴᴇʟ 』**\n\n"
         f"🌟 **ʙᴏᴛ ɪɴғᴏʀᴍᴀᴛɪᴏɴ:**\n"
@@ -52,7 +57,10 @@ async def send_bot_details_panel(chat_id, bot_id, reply_to_message_id=None, quer
         f" ├ 🎤 **ᴀssɪsᴛᴀɴᴛ sᴇᴛᴛɪɴɢ:** {assistant_mode} (ᴀssɪsᴛᴀɴᴛ {assistant_id if assistant_mode == 'SYSTEM' else 'ᴄᴜsᴛᴏᴍ'})\n"
         f" ├ 📥 **ᴘʟᴀʏ ᴘʀᴇғᴇʀᴇɴᴄᴇ:** {settings.get('playback_preferences')}\n"
         f" ├ 🔄 **ǫᴜᴇᴜᴇ ʙᴇʜᴀᴠɪᴏʀ:** {settings.get('queue_behavior')}\n"
-        f" └ 👋 **ᴡᴇʟᴄᴏᴍᴇ ᴛᴇxᴛ:** {settings.get('welcome_text')}\n\n"
+        f" ├ 👋 **ᴡᴇʟᴄᴏᴍᴇ ᴛᴇxᴛ:** {welcome_text}\n"
+        f" ├ 🖼️ **ᴡᴇʟᴄᴏᴍᴇ ɪᴍᴀɢᴇ:** [ᴠɪᴇᴡ ɪᴍᴀɢᴇ]({welcome_img})\n"
+        f" ├ 🖼️ **ᴘʟᴀʏ ɪᴍᴀɢᴇ:** [ᴠɪᴇᴡ ɪᴍᴀɢᴇ]({play_img})\n"
+        f" └ 📝 **ᴘʟᴀʏ ᴛᴇxᴛ:** {play_text[:50]}...\n\n"
         f"✨ *ᴜsᴇ ᴛʜᴇ ʙᴜᴛᴛᴏɴs ʙᴇʟᴏᴡ ᴛᴏ ᴍᴏᴅɪғʏ ᴀɴʏ sᴇᴛᴛɪɴɢ ᴏғ ʏᴏᴜʀ ᴄʟᴏɴᴇ sᴇᴀᴍʟᴇssʟʏ!*"
     )
 
@@ -62,9 +70,10 @@ async def send_bot_details_panel(chat_id, bot_id, reply_to_message_id=None, quer
         ],
         [
             InlineKeyboardButton("📝 ᴄʜᴀɴɢᴇ ʙʀᴀɴᴅɪɴɢ", callback_data=f"EDIT_BRAND_{bot_id}"),
-            InlineKeyboardButton("👋 ᴄʜᴀɴɢᴇ ᴡᴇʟᴄᴏᴍᴇ", callback_data=f"EDIT_WELCOME_{bot_id}")
+            InlineKeyboardButton("👋 ᴄʜᴀɴɢᴇ ᴡᴇʟᴄᴏᴍᴇ", callback_data=f"EDIT_WELCOME_SUB_{bot_id}")
         ],
         [
+            InlineKeyboardButton("🎵 ᴘʟᴀʏ ᴄᴜsᴛᴏᴍɪᴢᴇ", callback_data=f"EDIT_PLAY_CUSTOM_{bot_id}"),
             InlineKeyboardButton("🔘 ᴍᴀɴᴀɢᴇ ɪɴʟɪɴᴇ ʙᴜᴛᴛᴏɴs", callback_data=f"MANAGE_CUST_BTNS_{bot_id}")
         ],
         [
@@ -661,6 +670,42 @@ async def handle_user_input_state(client, message: Message):
         await message.reply_text(f"✅ **Welcome message successfully updated.**")
         await send_bot_details_panel(user_id, bot_id)
 
+    elif action == "wait_for_welcome_img":
+        new_url = message.text.strip()
+        if not new_url.startswith("http://") and not new_url.startswith("https://"):
+            return await message.reply_text("❌ **Invalid URL! Please send a direct image link starting with http:// or https://.**")
+
+        settings["welcome_img"] = new_url
+        await update_clone_settings(bot_id, settings)
+        del user_states[user_id]
+
+        await message.reply_text(f"✅ **Welcome Image successfully updated to:**\n{new_url}")
+        await send_bot_details_panel(user_id, bot_id)
+
+    elif action == "wait_for_play_img":
+        new_url = message.text.strip()
+        if not new_url.startswith("http://") and not new_url.startswith("https://"):
+            return await message.reply_text("❌ **Invalid URL! Please send a direct image link starting with http:// or https://.**")
+
+        settings["play_img"] = new_url
+        await update_clone_settings(bot_id, settings)
+        del user_states[user_id]
+
+        await message.reply_text(f"✅ **Play Message Image successfully updated to:**\n{new_url}")
+        await send_bot_details_panel(user_id, bot_id)
+
+    elif action == "wait_for_play_text":
+        new_text = message.text.strip()
+        if not new_text:
+            return await message.reply_text("❌ **Play message text cannot be empty! Please send a valid text.**")
+
+        settings["play_text"] = new_text
+        await update_clone_settings(bot_id, settings)
+        del user_states[user_id]
+
+        await message.reply_text(f"✅ **Play Message Text successfully updated.**")
+        await send_bot_details_panel(user_id, bot_id)
+
     elif action == "wait_for_custom_session":
         session_string = message.text.strip()
         if not session_string:
@@ -709,6 +754,154 @@ async def handle_user_input_state(client, message: Message):
 
 
 # ----------------------------------------------------------------------
+# NEW SUB PANELS FOR WELCOME AND PLAY CUSTOMIZATION
+# ----------------------------------------------------------------------
+
+@app.on_callback_query(filters.regex("^EDIT_WELCOME_SUB_(\\d+)$"))
+async def edit_welcome_sub_panel_callback(client, query: CallbackQuery):
+    bot_id = int(query.data.split("_")[3])
+    user_id = query.from_user.id
+
+    clone = await get_clone_by_id(bot_id)
+    if not clone or clone.get("tenant_id") != user_id:
+        return await query.answer("Access Denied.", show_alert=True)
+
+    settings = clone.get("settings", {})
+    welcome_text = settings.get("welcome_text", "Welcome to my cloned music player bot!")
+    welcome_img = settings.get("welcome_img", "https://litter.catbox.moe/xr9jf82b2umeke7j.jpg")
+
+    text = (
+        f"👋 **『 ᴡᴇʟᴄᴏᴍᴇ ᴍᴇssᴀɢᴇ ᴄᴜsᴛᴏᴍɪᴢᴀᴛɪᴏɴ 』**\n\n"
+        f"👋 **ᴄᴜʀʀᴇɴᴛ ᴡᴇʟᴄᴏᴍᴇ ᴛᴇxᴛ:**\n`{welcome_text}`\n\n"
+        f"🖼️ **ᴄᴜʀʀᴇɴᴛ ᴡᴇʟᴄᴏᴍᴇ ɪᴍᴀɢᴇ:**\n{welcome_img}\n\n"
+        f"ᴡʜᴀᴛ ᴡᴏᴜʟᴅ ʏᴏᴜ ʟɪᴋᴇ ᴛᴏ ᴇᴅɪᴛ?"
+    )
+    buttons = [
+        [
+            InlineKeyboardButton("📝 ᴇᴅɪᴛ ᴡᴇʟᴄᴏᴍᴇ ᴛᴇxᴛ", callback_data=f"EDIT_WELCOME_TEXT_OPT_{bot_id}"),
+            InlineKeyboardButton("🖼️ ᴇᴅɪᴛ ᴡᴇʟᴄᴏᴍᴇ ɪᴍᴀɢᴇ", callback_data=f"EDIT_WELCOME_IMAGE_OPT_{bot_id}"),
+        ],
+        [
+            InlineKeyboardButton("🔙 ʙᴀᴄᴋ", callback_data=f"MANAGE_BOT_{bot_id}")
+        ]
+    ]
+    await query.message.edit_text(text, reply_markup=InlineKeyboardMarkup(buttons), disable_web_page_preview=True)
+    await query.answer()
+
+
+@app.on_callback_query(filters.regex("^EDIT_WELCOME_TEXT_OPT_(\\d+)$"))
+async def edit_welcome_text_opt_callback(client, query: CallbackQuery):
+    bot_id = int(query.data.split("_")[4])
+    user_id = query.from_user.id
+
+    clone = await get_clone_by_id(bot_id)
+    settings = clone.get("settings", {})
+    old_welcome = settings.get("welcome_text", "Welcome to my cloned music player bot!")
+
+    user_states[user_id] = {"action": "wait_for_welcome", "bot_id": bot_id}
+    await query.message.reply_text(
+        f"👋 **『 ᴇᴅɪᴛ ᴡᴇʟᴄᴏᴍᴇ ᴍᴇssᴀɢᴇ 』**\n\n"
+        f"🔍 **ᴄᴜʀʀᴇɴᴛ ᴡᴇʟᴄᴏᴍᴇ ᴛᴇxᴛ:**\n`{old_welcome}`\n\n"
+        f"ᴘʟᴇᴀsᴇ sᴇɴᴅ ᴛʜᴇ **ɴᴇᴡ** ᴡᴇʟᴄᴏᴍᴇ text message ᴛʜᴀᴛ ᴛʜᴇ ʙᴏᴛ ᴡɪʟʟ sᴇɴᴅ ᴡʜᴇɴ ᴀ ᴜsᴇʀ sᴛᴀʀᴛs ɪᴛ:\n"
+        f"*(You can use placeholders like {{user}} or {{mention}})*\n\n"
+        f"*(Send /cancel to cancel this operation)*"
+    )
+    await query.answer()
+
+
+@app.on_callback_query(filters.regex("^EDIT_WELCOME_IMAGE_OPT_(\\d+)$"))
+async def edit_welcome_image_opt_callback(client, query: CallbackQuery):
+    bot_id = int(query.data.split("_")[4])
+    user_id = query.from_user.id
+
+    clone = await get_clone_by_id(bot_id)
+    settings = clone.get("settings", {})
+    old_img = settings.get("welcome_img", "https://litter.catbox.moe/xr9jf82b2umeke7j.jpg")
+
+    user_states[user_id] = {"action": "wait_for_welcome_img", "bot_id": bot_id}
+    await query.message.reply_text(
+        f"🖼️ **『 ᴇᴅɪᴛ ᴡᴇʟᴄᴏᴍᴇ ɪᴍᴀɢᴇ 』**\n\n"
+        f"🔍 **ᴄᴜʀʀᴇɴᴛ ᴡᴇʟᴄᴏᴍᴇ ɪᴍᴀɢᴇ:**\n{old_img}\n\n"
+        f"ᴘʟᴇᴀsᴇ sᴇɴᴅ ᴀ ᴅɪʀᴇᴄᴛ ɪᴍᴀɢᴇ ᴜʀʟ (e.g. from Catbox, Telegraph, etc.) "
+        f"ᴛʜᴀᴛ ʏᴏᴜ ᴡᴀɴᴛ ᴛᴏ sᴇᴛ ᴀs ʏᴏᴜʀ ᴄʟᴏɴᴇ's ᴡᴇʟᴄᴏᴍᴇ ʙᴀɴɴᴇʀ:\n\n"
+        f"*(Send /cancel to cancel this operation)*"
+    )
+    await query.answer()
+
+
+@app.on_callback_query(filters.regex("^EDIT_PLAY_CUSTOM_(\\d+)$"))
+async def edit_play_custom_callback(client, query: CallbackQuery):
+    bot_id = int(query.data.split("_")[3])
+    user_id = query.from_user.id
+
+    clone = await get_clone_by_id(bot_id)
+    if not clone or clone.get("tenant_id") != user_id:
+        return await query.answer("Access Denied.", show_alert=True)
+
+    settings = clone.get("settings", {})
+    play_text = settings.get("play_text", "🎀 **Started Streaming**\n\n🩶 **Title:** {title}\n🪐 **Duration:** {duration} minutes\n🎧 **Requested by:** {user}\n\n🎀 **Powered By:** @{bot_username}")
+    play_img = settings.get("play_img", "https://graph.org/file/4fb9a698630aa5b47be05-060979d72b7752fc8f.jpg")
+
+    text = (
+        f"🎵 **『 ᴘʟᴀʏ ᴍᴇssᴀɢᴇ ᴄᴜsᴛᴏᴍɪᴢᴀᴛɪᴏɴ 』**\n\n"
+        f"🎵 **ᴄᴜʀʀᴇɴᴛ ᴘʟᴀʏ ᴛᴇxᴛ:**\n`{play_text}`\n\n"
+        f"🖼️ **ᴄᴜʀʀᴇɴᴛ ᴘʟᴀʏ ɪᴍᴀɢᴇ:**\n{play_img}\n\n"
+        f"ᴡʜᴀᴛ ᴡᴏᴜʟᴅ ʏᴏᴜ ʟɪᴋᴇ ᴛᴏ ᴇᴅɪᴛ?"
+    )
+    buttons = [
+        [
+            InlineKeyboardButton("📝 ᴇᴅɪᴛ ᴘʟᴀʏ ᴛᴇxᴛ", callback_data=f"EDIT_PLAY_TEXT_OPT_{bot_id}"),
+            InlineKeyboardButton("🖼️ ᴇᴅɪᴛ ᴘʟᴀʏ ɪᴍᴀɢᴇ", callback_data=f"EDIT_PLAY_IMAGE_OPT_{bot_id}"),
+        ],
+        [
+            InlineKeyboardButton("🔙 ʙᴀᴄᴋ", callback_data=f"MANAGE_BOT_{bot_id}")
+        ]
+    ]
+    await query.message.edit_text(text, reply_markup=InlineKeyboardMarkup(buttons), disable_web_page_preview=True)
+    await query.answer()
+
+
+@app.on_callback_query(filters.regex("^EDIT_PLAY_TEXT_OPT_(\\d+)$"))
+async def edit_play_text_opt_callback(client, query: CallbackQuery):
+    bot_id = int(query.data.split("_")[4])
+    user_id = query.from_user.id
+
+    clone = await get_clone_by_id(bot_id)
+    settings = clone.get("settings", {})
+    old_play_text = settings.get("play_text", "🎀 **Started Streaming**\n\n🩶 **Title:** {title}\n🪐 **Duration:** {duration} minutes\n🎧 **Requested by:** {user}\n\n🎀 **Powered By:** @{bot_username}")
+
+    user_states[user_id] = {"action": "wait_for_play_text", "bot_id": bot_id}
+    await query.message.reply_text(
+        f"📝 **『 ᴇᴅɪᴛ ᴘʟᴀʏ ᴍᴇssᴀɢᴇ ᴛᴇxᴛ 』**\n\n"
+        f"🔍 **ᴄᴜʀʀᴇɴᴛ ᴘʟᴀʏ ᴛᴇxᴛ:**\n`{old_play_text}`\n\n"
+        f"ᴘʟᴇᴀsᴇ sᴇɴᴅ ᴛʜᴇ **ɴᴇᴡ** play caption template text:\n"
+        f"*(You can use placeholders: {{title}}, {{duration}}, {{user}}, {{link}}, {{bot_username}})*\n\n"
+        f"*(Send /cancel to cancel this operation)*"
+    )
+    await query.answer()
+
+
+@app.on_callback_query(filters.regex("^EDIT_PLAY_IMAGE_OPT_(\\d+)$"))
+async def edit_play_image_opt_callback(client, query: CallbackQuery):
+    bot_id = int(query.data.split("_")[4])
+    user_id = query.from_user.id
+
+    clone = await get_clone_by_id(bot_id)
+    settings = clone.get("settings", {})
+    old_img = settings.get("play_img", "https://graph.org/file/4fb9a698630aa5b47be05-060979d72b7752fc8f.jpg")
+
+    user_states[user_id] = {"action": "wait_for_play_img", "bot_id": bot_id}
+    await query.message.reply_text(
+        f"🖼️ **『 ᴇᴅɪᴛ ᴘʟᴀʏ ᴍᴇssᴀɢᴇ ɪᴍᴀɢᴇ 』**\n\n"
+        f"🔍 **ᴄᴜʀʀᴇɴᴛ ᴘʟᴀʏ ɪᴍᴀɢᴇ:**\n{old_img}\n\n"
+        f"ᴘʟᴇᴀsᴇ sᴇɴᴅ ᴀ ᴅɪʀᴇᴄᴛ ɪᴍᴀɢᴇ ᴜʀʟ (e.g. from Catbox, Telegraph, etc.) "
+        f"ᴛʜᴀᴛ ʏᴏᴜ ᴡᴀɴᴛ ᴛᴏ sᴇᴛ ᴀs ʏᴏᴜʀ ᴄʟᴏɴᴇ's sᴏɴɢ ᴘʟᴀʏ ʙᴀɴɴᴇʀ:\n\n"
+        f"*(Send /cancel to cancel this operation)*"
+    )
+    await query.answer()
+
+
+# ----------------------------------------------------------------------
 # CUSTOM INLINE BUTTONS HELPERS AND CONTROLS
 # ----------------------------------------------------------------------
 
@@ -722,7 +915,7 @@ async def send_custom_buttons_panel(chat_id, bot_id, reply_to_message_id=None, q
     custom_buttons = clone.get("settings", {}).get("custom_buttons", [])
     text = (
         f"🔘 **『 ᴍᴀɴᴀɢᴇ ɪɴʟɪɴᴇ ʙᴜᴛᴛᴏɴs 』**\n\n"
-        f"ʏᴏᴜ ᴄᴀɴ ᴄᴏɴғɪɢᴜʀᴇ ᴄᴏᴍᴘʟᴇᴛᴇʟʏ ᴄᴜsᴛᴏᴍ ɪɴʟɪɴᴇ ʙᴜᴛᴛᴏɴs ғᴏʀ ʏᴏᴜʀ ᴄʟᴏɴᴇᴅ ʙᴏᴛ's sᴛᴀʀᴛ ᴘᴀɴᴇʟ!\n\n"
+        f"ʏᴏᴜ ᴄᴀɴ ᴄᴏɴғɪɢᴜʀᴇ ᴛʜᴇ ʟɪɴᴋs ᴏʀ ᴍᴇssᴀɢᴇs ᴏғ ʏᴏᴜʀ ᴄʟᴏɴᴇᴅ ʙᴏᴛ's ɪɴʟɪɴᴇ ʙᴜᴛᴛᴏɴs ʜᴇʀᴇ!\n\n"
         f"📋 **ᴄᴜʀʀᴇɴᴛ ʙᴜᴛᴛᴏɴs ({len(custom_buttons)}):**\n"
     )
     if not custom_buttons:
@@ -737,10 +930,6 @@ async def send_custom_buttons_panel(chat_id, bot_id, reply_to_message_id=None, q
             text += f" {idx+1}. 🏷️ **{b_text}** | ⚙️ **{b_type}**\n   └ 🔗 `{b_val}`\n"
 
     buttons = [
-        [
-            InlineKeyboardButton("➕ ᴀᴅᴅ ʙᴜᴛᴛᴏɴ", callback_data=f"ADD_CUST_BTN_{bot_id}"),
-            InlineKeyboardButton("❌ ᴅᴇʟᴇᴛᴇ ʙᴜᴛᴛᴏɴ", callback_data=f"DEL_CUST_BTN_{bot_id}")
-        ],
         [
             InlineKeyboardButton("✏️ ᴇᴅɪᴛ ʙᴜᴛᴛᴏɴ", callback_data=f"EDIT_CUST_BTN_{bot_id}"),
             InlineKeyboardButton("🔄 ʀᴇsᴇᴛ ᴛᴏ ᴅᴇғᴀᴜʟᴛ", callback_data=f"RESET_CUST_BTN_{bot_id}")
@@ -768,26 +957,6 @@ async def manage_custom_buttons_callback(client, query: CallbackQuery):
     await send_custom_buttons_panel(user_id, bot_id, query=query)
 
 
-@app.on_callback_query(filters.regex("^ADD_CUST_BTN_(\\d+)$"))
-async def add_custom_button_callback(client, query: CallbackQuery):
-    bot_id = int(query.data.split("_")[3])
-    user_id = query.from_user.id
-
-    clone = await get_clone_by_id(bot_id)
-    if not clone or clone.get("tenant_id") != user_id:
-        return await query.answer("Access Denied.", show_alert=True)
-
-    custom_buttons = clone.get("settings", {}).get("custom_buttons", [])
-    if len(custom_buttons) >= 15:
-        return await query.answer("❌ You can only add up to 15 custom buttons.", show_alert=True)
-
-    user_states[user_id] = {"action": "wait_for_btn_text", "bot_id": bot_id}
-    await query.message.reply_text(
-        f"✏️ **『 ᴀᴅᴅ ᴄᴜsᴛᴏᴍ ʙᴜᴛᴛᴏɴ 』**\n\n"
-        f"ᴘʟᴇᴀsᴇ sᴇɴᴅ ᴛʜᴇ **ᴛᴇxᴛ** (label) ғᴏʀ ʏᴏᴜʀ ɴᴇᴡ ɪɴʟɪɴᴇ ʙᴜᴛᴛᴏɴ:\n\n"
-        f"*(Send /cancel to cancel this operation)*"
-    )
-    await query.answer()
 
 
 @app.on_callback_query(filters.regex("^CHOOSE_BTN_TYPE_(url|alert|message)$"))
@@ -837,57 +1006,6 @@ async def choose_button_type_callback(client, query: CallbackQuery):
     await query.answer()
 
 
-@app.on_callback_query(filters.regex("^DEL_CUST_BTN_(\\d+)$"))
-async def delete_custom_buttons_list_callback(client, query: CallbackQuery):
-    bot_id = int(query.data.split("_")[3])
-    user_id = query.from_user.id
-
-    clone = await get_clone_by_id(bot_id)
-    if not clone or clone.get("tenant_id") != user_id:
-        return await query.answer("Access Denied.", show_alert=True)
-
-    custom_buttons = clone.get("settings", {}).get("custom_buttons", [])
-    if not custom_buttons:
-        return await query.answer("❌ No custom buttons to delete.", show_alert=True)
-
-    text = (
-        f"🗑️ **『 ᴅᴇʟᴇᴛᴇ ᴄᴜsᴛᴏᴍ ʙᴜᴛᴛᴏɴ 』**\n\n"
-        f"sᴇʟᴇᴄᴛ ᴛʜᴇ ʙᴜᴛᴛᴏɴ ʏᴏᴜ ᴡᴀɴᴛ ᴛᴏ delete:"
-    )
-
-    buttons = []
-    for idx, btn in enumerate(custom_buttons):
-        buttons.append([
-            InlineKeyboardButton(f"🗑️ {btn.get('text')}", callback_data=f"CONFIRM_DEL_CUST_BTN_{bot_id}_{idx}")
-        ])
-    buttons.append([InlineKeyboardButton("🔙 ʙᴀᴄᴋ", callback_data=f"MANAGE_CUST_BTNS_{bot_id}")])
-
-    await query.message.edit_text(text, reply_markup=InlineKeyboardMarkup(buttons))
-    await query.answer()
-
-
-@app.on_callback_query(filters.regex("^CONFIRM_DEL_CUST_BTN_(\\d+)_(\\d+)$"))
-async def confirm_delete_custom_button_callback(client, query: CallbackQuery):
-    parts = query.data.split("_")
-    bot_id = int(parts[4])
-    idx = int(parts[5])
-    user_id = query.from_user.id
-
-    clone = await get_clone_by_id(bot_id)
-    if not clone or clone.get("tenant_id") != user_id:
-        return await query.answer("Access Denied.", show_alert=True)
-
-    settings = clone.get("settings", {})
-    custom_buttons = settings.get("custom_buttons", [])
-    if idx < len(custom_buttons):
-        removed = custom_buttons.pop(idx)
-        settings["custom_buttons"] = custom_buttons
-        await update_clone_settings(bot_id, settings)
-        await query.answer(f"✅ Removed button '{removed.get('text')}'!", show_alert=True)
-    else:
-        await query.answer("❌ Button not found.", show_alert=True)
-
-    await send_custom_buttons_panel(user_id, bot_id, query=query)
 
 
 @app.on_callback_query(filters.regex("^EDIT_CUST_BTN_(\\d+)$"))
@@ -1077,13 +1195,18 @@ async def reset_custom_buttons_callback(client, query: CallbackQuery):
     if not clone or clone.get("tenant_id") != user_id:
         return await query.answer("Access Denied.", show_alert=True)
 
+    # Re-initialize to exactly 4 default buttons
+    default_buttons = [
+        {"text": "➕ ʌᴅᴅ ϻє", "type": "url", "value": f"https://t.me/{clone.get('bot_username')}?startgroup=true"},
+        {"text": "⌯ sυᴘᴘσʀᴛ ⌯", "type": "url", "value": config.SUPPORT_CHAT},
+        {"text": "⌯ σwɴᴇʀ ⌯", "type": "url", "value": f"https://t.me/{config.OWNER_USERNAME}"},
+        {"text": "⌯ ᴧʙσυт ⌯", "type": "alert", "value": "This is a beautiful custom cloned music bot designed for high-performance audio streaming."}
+    ]
+
     settings = clone.get("settings", {})
-    if "custom_buttons" in settings:
-        del settings["custom_buttons"]
-        await update_clone_settings(bot_id, settings)
-        await query.answer("🔄 Custom buttons reset to default!", show_alert=True)
-    else:
-        await query.answer("💡 Already showing default buttons.", show_alert=True)
+    settings["custom_buttons"] = default_buttons
+    await update_clone_settings(bot_id, settings)
+    await query.answer("🔄 Custom buttons reset to default 4 buttons!", show_alert=True)
 
     await send_custom_buttons_panel(user_id, bot_id, query=query)
 
