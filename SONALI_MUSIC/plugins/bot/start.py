@@ -126,9 +126,9 @@ async def start_pm(client, message: Message, _):
                 settings = clone.get("settings", {})
                 cust_img = settings.get("welcome_img")
                 cust_text = settings.get("welcome_text")
-                if cust_img:
+                if cust_img and cust_img != "https://litter.catbox.moe/xr9jf82b2umeke7j.jpg":
                     welcome_img = cust_img
-                if cust_text:
+                if cust_text and cust_text != "Welcome to my cloned music player bot!":
                     welcome_caption = cust_text.replace("{user}", message.from_user.first_name).replace("{mention}", message.from_user.mention)
         except Exception as e:
             print(f"Error loading clone welcome customization: {e}")
