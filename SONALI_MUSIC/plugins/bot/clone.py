@@ -31,16 +31,9 @@ def to_smallcap(text: str) -> str:
 async def clone_cmd_handler(client, message: Message):
     user_id = message.from_user.id
 
-    # 1. Premium check (bypass for central owner)
+    # Bypass premium check to allow everyone to clone.
     is_owner = (user_id == config.OWNER_ID)
     premium_status = await check_premium_access(user_id)
-
-    if not is_owner and not premium_status.get("has_premium", False):
-        return await message.reply_text(
-            f"❌ **{to_smallcap('access denied')}**\n\n"
-            f"You need a premium subscription to create and manage cloned bots.\n"
-            f"Please contact the admin @{config.OWNER_USERNAME} to upgrade."
-        )
 
     parts = message.text.split(None, 1)
     if len(parts) < 2:
@@ -112,14 +105,6 @@ async def clone_cmd_handler(client, message: Message):
 @app.on_callback_query(filters.regex("^CLONE_BTN$"))
 async def clone_btn_callback(client, query: CallbackQuery):
     user_id = query.from_user.id
-    is_owner = (user_id == config.OWNER_ID)
-    premium_status = await check_premium_access(user_id)
-
-    if not is_owner and not premium_status.get("has_premium", False):
-        return await query.answer(
-            to_smallcap("premium access required"),
-            show_alert=True
-        )
 
     await query.message.reply_text(
         f"🤖 **{to_smallcap('how to clone')}**\n\n"
