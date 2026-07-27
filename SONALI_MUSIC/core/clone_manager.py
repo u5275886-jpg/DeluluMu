@@ -148,6 +148,19 @@ class CloneManager:
 
             self.clones[me.id] = clone_client
             await update_clone_status(me.id, "active")
+
+            # Start custom assistant if configured
+            try:
+                from SONALI_MUSIC.utils.database_clone import get_clone_by_id
+                from SONALI_MUSIC.core.call import Sona
+                clone_db = await get_clone_by_id(me.id)
+                if clone_db and clone_db.get("assistant_mode") == "custom":
+                    custom_session = clone_db.get("custom_session")
+                    if custom_session:
+                        await Sona.start_custom_assistant(me.id, custom_session)
+            except Exception as e:
+                logger.error(f"Failed to start custom assistant for clone @{me.username}: {e}")
+
             return clone_client
         except Exception as e:
             logger.error(f"Failed to start cloned bot with token {bot_token[:10]}...: {e}")
@@ -156,6 +169,13 @@ class CloneManager:
     async def stop_clone(self, bot_id: int) -> bool:
         """Stops and removes an active cloned client."""
         if bot_id in self.clones:
+            # Stop custom assistant if active
+            try:
+                from SONALI_MUSIC.core.call import Sona
+                await Sona.stop_custom_assistant(bot_id)
+            except Exception as e:
+                logger.error(f"Failed to stop custom assistant for clone {bot_id}: {e}")
+
             client = self.clones[bot_id]
             try:
                 await client.stop()
