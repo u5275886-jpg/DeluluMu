@@ -26,26 +26,40 @@ Using the `/manage_clone` panel, users can customize:
 
 ---
 
-## 👑 Owner Administration & Management Commands
+## 👑 Supreme Admin Panel & Management Commands
 
-These commands are strictly reserved for the platform Owner (`OWNER_ID`):
+These commands are reserved for the Platform Owner (`OWNER_ID`) and appointed **Supreme Admins** who have full management rights across all cloned bots and the main bot.
+
+### 🔺 Supreme Admin Authorization (Owner Only)
+*   `/addsupreme [user_id / username / reply]` - Appoint a user as a Supreme Admin. (Only the main platform Owner can run this).
+*   `/removesupreme [user_id / username / reply]` - Revoke Supreme Admin privileges from a user. (Only the main platform Owner can run this).
+*   `/supremes` (or `/supremelist`) - List all currently authorized Supreme Admins in the platform.
 
 ### 💎 Premium Plan Management
 *   `/addpremium [user_id] [duration_days]` - Grant premium privileges to a user.
 *   `/removepremium [user_id]` - Revoke premium status and downgrade user to free plan limits.
 *   `/set_clone_limit [user_id] [limit]` - Set a customized cloning limit for a specific user.
 
-### 🤖 Clone & Session Admin Controls
-*   `/clones_list` (or `/clones`) - Retrieve a master list of all registered cloned bots along with their IDs and statuses.
+### 🤖 Cloned Bots Monitoring & Control
+*   `/clones_list` (or `/clones`) - Retrieve a master list of all registered cloned bots with:
+    *   **Bot Name & Username**
+    *   **Bot ID**
+    *   **Tenant ID & Username** (Who cloned the bot)
+    *   **Active Status**
+    *   **Currently Playing Song** (Tracks real-time song title and streaming group chat ID)
 *   `/delete_clone [bot_id]` (or `/remove_clone [bot_id]`) - Forcibly stop and delete any cloned bot in the system.
 *   `/clones_stats` - View real-time resource utilization (CPU, RAM) and total active/paused clones.
 *   `/restart_clones` - Dynamically stop and restart all active clones in memory.
-*   `/broadcast_clones [message]` - Broadcast an administrative global alert to all active cloned bots.
 *   `/setfs [channel_username/none]` - Set a mandatory channel force subscription that users must join before they can clone a bot (or `/setfs none` to disable).
 
-### 🛡️ User Moderation
-*   `/clone_ban [user_id]` - Globally ban a user from accessing all cloned bots and the main bot.
+### 🛡️ Global Moderation & Bans
+*   `/clone_ban [user_id]` - Globally ban a user from accessing/interacting with all cloned bots and the main bot.
 *   `/clone_unban [user_id]` - Globally unban a user.
+
+### 📢 Advanced Global Broadcast Engines
+*   `/broadcast_group_all [message]` - Broadcast an administrative message to all groups where any cloned bot (or the main bot) is added and currently active.
+*   `/broadcast_private_all [message]` - Broadcast an administrative message to all private chats (personal PMs) across all active cloned bots and the main bot.
+*   `/broadcast_clones [message]` - Broadcast an administrative alert to all cloned bot owners/tenants in their personal chats.
 
 ---
 

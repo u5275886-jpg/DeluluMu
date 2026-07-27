@@ -8,6 +8,9 @@ premium_db = mongodb.premium_users
 broadcast_db = mongodb.broadcast_jobs
 audit_db = mongodb.audit_trails
 logs_db = mongodb.cloned_logs
+cloned_chats_db = mongodb.cloned_chats
+cloned_users_db = mongodb.cloned_users
+supreme_db = mongodb.supreme_admins
 
 # ----------------------------------------------------------------------
 # 1. PREMIUM CONTROLS
@@ -278,3 +281,66 @@ async def get_custom_help_text(bot_id: int, key: str, default_val: str) -> str:
     except Exception:
         pass
     return default_val
+
+# ----------------------------------------------------------------------
+# 6. SUPREME ADMINS & BOT CHAT/USER TRACKING CONTROLS
+# ----------------------------------------------------------------------
+
+async def add_supreme_admin(user_id: int) -> bool:
+    """Adds a user to the Supreme Admins list."""
+    await supreme_db.update_one(
+        {"user_id": user_id},
+        {"$set": {"assigned_at": int(time.time())}},
+        upsert=True
+    )
+    return True
+
+async def remove_supreme_admin(user_id: int) -> bool:
+    """Removes a user from the Supreme Admins list."""
+    await supreme_db.delete_one({"user_id": user_id})
+    return True
+
+async def get_supreme_admins() -> List[int]:
+    """Retrieves all Supreme Admin user IDs."""
+    admins = []
+    async for admin in supreme_db.find({}):
+        admins.append(admin["user_id"])
+    return admins
+
+async def is_supreme_admin(user_id: int) -> bool:
+    """Checks if a user is a Supreme Admin (the main owner is always a Supreme Admin)."""
+    import config
+    if user_id == config.OWNER_ID:
+        return True
+    admin = await supreme_db.find_one({"user_id": user_id})
+    return admin is not None
+
+async def add_cloned_served_chat(bot_id: int, chat_id: int):
+    """Tracks which group chat belongs to which cloned bot."""
+    await cloned_chats_db.update_one(
+        {"bot_id": bot_id, "chat_id": chat_id},
+        {"$set": {"last_active": int(time.time())}},
+        upsert=True
+    )
+
+async def add_cloned_served_user(bot_id: int, user_id: int):
+    """Tracks which private user belongs to which cloned bot."""
+    await cloned_users_db.update_one(
+        {"bot_id": bot_id, "user_id": user_id},
+        {"$set": {"last_active": int(time.time())}},
+        upsert=True
+    )
+
+async def get_cloned_served_chats(bot_id: int) -> List[int]:
+    """Retrieves all served group chats for a specific cloned bot."""
+    chats = []
+    async for chat in cloned_chats_db.find({"bot_id": bot_id}):
+        chats.append(chat["chat_id"])
+    return chats
+
+async def get_cloned_served_users(bot_id: int) -> List[int]:
+    """Retrieves all served private users for a specific cloned bot."""
+    users = []
+    async for user in cloned_users_db.find({"bot_id": bot_id}):
+        users.append(user["user_id"])
+    return users
