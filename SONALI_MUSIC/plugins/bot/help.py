@@ -34,8 +34,11 @@ async def helper_private(
         language = await get_lang(chat_id)
         _ = get_string(language)
         keyboard = help_pannel(_, True)
+        default_val = _["help_1"].format(SUPPORT_CHAT)
+        from SONALI_MUSIC.utils.database_clone import get_custom_help_text
+        help_text = await get_custom_help_text(client.me.id, "main_help", default_val)
         await update.edit_message_text(
-            _["help_1"].format(SUPPORT_CHAT), reply_markup=keyboard
+            help_text, reply_markup=keyboard
         )
     else:
         try:
@@ -45,9 +48,12 @@ async def helper_private(
         language = await get_lang(update.chat.id)
         _ = get_string(language)
         keyboard = help_pannel(_)
+        default_val = _["help_1"].format(SUPPORT_CHAT)
+        from SONALI_MUSIC.utils.database_clone import get_custom_help_text
+        help_text = await get_custom_help_text(client.me.id, "main_help", default_val)
         await update.reply_photo(
             photo=START_IMG_URL,
-            caption=_["help_1"].format(SUPPORT_CHAT),
+            caption=help_text,
             reply_markup=keyboard,
         )
 
@@ -56,7 +62,10 @@ async def helper_private(
 @LanguageStart
 async def help_com_group(client, message: Message, _):
     keyboard = private_help_panel(_)
-    await message.reply_text(_["help_2"], reply_markup=InlineKeyboardMarkup(keyboard))
+    default_val = _["help_2"]
+    from SONALI_MUSIC.utils.database_clone import get_custom_help_text
+    help_text = await get_custom_help_text(client.me.id, "main_help", default_val)
+    await message.reply_text(help_text, reply_markup=InlineKeyboardMarkup(keyboard))
 
 @app.on_callback_query(filters.regex("help_callback") & ~BANNED_USERS)
 @languageCB
@@ -64,36 +73,11 @@ async def helper_cb(client, CallbackQuery, _):
     callback_data = CallbackQuery.data.strip()
     cb = callback_data.split(None, 1)[1]
     keyboard = help_back_markup(_)
-    if cb == "hb1":
-        await CallbackQuery.edit_message_text(helpers.HELP_1, reply_markup=keyboard)
-    elif cb == "hb2":
-        await CallbackQuery.edit_message_text(helpers.HELP_2, reply_markup=keyboard)
-    elif cb == "hb3":
-        await CallbackQuery.edit_message_text(helpers.HELP_3, reply_markup=keyboard)
-    elif cb == "hb4":
-        await CallbackQuery.edit_message_text(helpers.HELP_4, reply_markup=keyboard)
-    elif cb == "hb5":
-        await CallbackQuery.edit_message_text(helpers.HELP_5, reply_markup=keyboard)
-    elif cb == "hb6":
-        await CallbackQuery.edit_message_text(helpers.HELP_6, reply_markup=keyboard)
-    elif cb == "hb7":
-        await CallbackQuery.edit_message_text(helpers.HELP_7, reply_markup=keyboard)
-    elif cb == "hb8":
-        await CallbackQuery.edit_message_text(helpers.HELP_8, reply_markup=keyboard)
-    elif cb == "hb9":
-        await CallbackQuery.edit_message_text(helpers.HELP_9, reply_markup=keyboard)
-    elif cb == "hb10":
-        await CallbackQuery.edit_message_text(helpers.HELP_10, reply_markup=keyboard)
-    elif cb == "hb11":
-        await CallbackQuery.edit_message_text(helpers.HELP_11, reply_markup=keyboard)
-    elif cb == "hb12":
-        await CallbackQuery.edit_message_text(helpers.HELP_12, reply_markup=keyboard)
-    elif cb == "hb13":
-        await CallbackQuery.edit_message_text(helpers.HELP_13, reply_markup=keyboard)
-    elif cb == "hb14":
-        await CallbackQuery.edit_message_text(helpers.HELP_14, reply_markup=keyboard)
-    elif cb == "hb15":
-        await CallbackQuery.edit_message_text(helpers.HELP_15, reply_markup=keyboard)
+
+    default_val = getattr(helpers, cb.upper(), "")
+    from SONALI_MUSIC.utils.database_clone import get_custom_help_text
+    help_text = await get_custom_help_text(client.me.id, cb.lower(), default_val)
+    await CallbackQuery.edit_message_text(help_text, reply_markup=keyboard)
 
 
 
@@ -108,12 +92,14 @@ async def helper_cb(client, CallbackQuery, _):
 
 
 @app.on_callback_query(filters.regex("MANAGEMENT_CP") & ~BANNED_USERS)
-async def helper_cb(client, CallbackQuery):
-    await CallbackQuery.edit_message_text(Helper.HELP_M, reply_markup=InlineKeyboardMarkup(BUTTONS.MBUTTON))
+async def management_cp_cb(client, CallbackQuery):
+    from SONALI_MUSIC.utils.database_clone import get_custom_help_text
+    help_text = await get_custom_help_text(client.me.id, "management_main", Helper.HELP_M)
+    await CallbackQuery.edit_message_text(help_text, reply_markup=InlineKeyboardMarkup(BUTTONS.MBUTTON))
     
         
 @app.on_callback_query(filters.regex('MANAGEMENT_BACK'))      
-async def mb_plugin_button(client, CallbackQuery):
+async def management_back_cb(client, CallbackQuery):
     callback_data = CallbackQuery.data.strip()
     cb = callback_data.split(None, 1)[1]
     keyboard = InlineKeyboardMarkup(
@@ -126,7 +112,10 @@ async def mb_plugin_button(client, CallbackQuery):
     if cb == "MANAGEMENT":
         await CallbackQuery.edit_message_text(f"`something errors`",reply_markup=keyboard,parse_mode=enums.ParseMode.MARKDOWN)
     else:
-        await CallbackQuery.edit_message_text(getattr(Helper, cb), reply_markup=keyboard)
+        default_val = getattr(Helper, cb, f"`something errors`")
+        from SONALI_MUSIC.utils.database_clone import get_custom_help_text
+        help_text = await get_custom_help_text(client.me.id, cb.lower(), default_val)
+        await CallbackQuery.edit_message_text(help_text, reply_markup=keyboard)
 
 
 
@@ -141,12 +130,14 @@ async def mb_plugin_button(client, CallbackQuery):
 
 
 @app.on_callback_query(filters.regex("TOOL_CP") & ~BANNED_USERS)
-async def helper_cb(client, CallbackQuery):
-    await CallbackQuery.edit_message_text(Helper.HELP_B, reply_markup=InlineKeyboardMarkup(BUTTONS.BBUTTON))
+async def tool_cp_cb(client, CallbackQuery):
+    from SONALI_MUSIC.utils.database_clone import get_custom_help_text
+    help_text = await get_custom_help_text(client.me.id, "tool_main", Helper.HELP_B)
+    await CallbackQuery.edit_message_text(help_text, reply_markup=InlineKeyboardMarkup(BUTTONS.BBUTTON))
 
 
 @app.on_callback_query(filters.regex('TOOL_BACK'))      
-async def mb_plugin_button(client, CallbackQuery):
+async def tool_back_cb(client, CallbackQuery):
     callback_data = CallbackQuery.data.strip()
     cb = callback_data.split(None, 1)[1]
     keyboard = InlineKeyboardMarkup(
@@ -159,7 +150,10 @@ async def mb_plugin_button(client, CallbackQuery):
     if cb == "TOOL":
         await CallbackQuery.edit_message_text(f"`something errors`",reply_markup=keyboard,parse_mode=enums.ParseMode.MARKDOWN)
     else:
-        await CallbackQuery.edit_message_text(getattr(Helper, cb), reply_markup=keyboard)
+        default_val = getattr(Helper, cb, f"`something errors`")
+        from SONALI_MUSIC.utils.database_clone import get_custom_help_text
+        help_text = await get_custom_help_text(client.me.id, cb.lower(), default_val)
+        await CallbackQuery.edit_message_text(help_text, reply_markup=keyboard)
 
 
 
@@ -175,12 +169,14 @@ async def mb_plugin_button(client, CallbackQuery):
 
 
 @app.on_callback_query(filters.regex("MAIN_CP") & ~BANNED_USERS)
-async def helper_cb(client, CallbackQuery):
-    await CallbackQuery.edit_message_text(Helper.HELP_Sona, reply_markup=InlineKeyboardMarkup(BUTTONS.SBUTTON))
+async def main_cp_cb(client, CallbackQuery):
+    from SONALI_MUSIC.utils.database_clone import get_custom_help_text
+    help_text = await get_custom_help_text(client.me.id, "main_cp", Helper.HELP_Sona)
+    await CallbackQuery.edit_message_text(help_text, reply_markup=InlineKeyboardMarkup(BUTTONS.SBUTTON))
 
         
 @app.on_callback_query(filters.regex('MAIN_BACK'))      
-async def mb_plugin_button(client, CallbackQuery):
+async def main_back_cb(client, CallbackQuery):
     callback_data = CallbackQuery.data.strip()
     cb = callback_data.split(None, 1)[1]
     keyboard = InlineKeyboardMarkup(
@@ -193,7 +189,10 @@ async def mb_plugin_button(client, CallbackQuery):
     if cb == "MAIN":
         await CallbackQuery.edit_message_text(f"`something errors`",reply_markup=keyboard,parse_mode=enums.ParseMode.MARKDOWN)
     else:
-        await CallbackQuery.edit_message_text(getattr(Helper, cb), reply_markup=keyboard)
+        default_val = getattr(Helper, cb, f"`something errors`")
+        from SONALI_MUSIC.utils.database_clone import get_custom_help_text
+        help_text = await get_custom_help_text(client.me.id, cb.lower(), default_val)
+        await CallbackQuery.edit_message_text(help_text, reply_markup=keyboard)
 
 
 
@@ -204,12 +203,14 @@ async def mb_plugin_button(client, CallbackQuery):
 
 
 @app.on_callback_query(filters.regex("PROMOTION_CP") & ~BANNED_USERS)
-async def helper_cb(client, CallbackQuery):
-    await CallbackQuery.edit_message_text(Helper.HELP_PROMOTION, reply_markup=InlineKeyboardMarkup(BUTTONS.PBUTTON))
+async def promotion_cp_cb(client, CallbackQuery):
+    from SONALI_MUSIC.utils.database_clone import get_custom_help_text
+    help_text = await get_custom_help_text(client.me.id, "promotion", Helper.HELP_PROMOTION)
+    await CallbackQuery.edit_message_text(help_text, reply_markup=InlineKeyboardMarkup(BUTTONS.PBUTTON))
 
         
 @app.on_callback_query(filters.regex('PROMOTION_BACK'))      
-async def mb_plugin_button(client, CallbackQuery):
+async def promotion_back_cb(client, CallbackQuery):
     callback_data = CallbackQuery.data.strip()
     cb = callback_data.split(None, 1)[1]
     keyboard = InlineKeyboardMarkup(
@@ -222,7 +223,10 @@ async def mb_plugin_button(client, CallbackQuery):
     if cb == "PROMOTION":
         await CallbackQuery.edit_message_text(f"`something errors`",reply_markup=keyboard,parse_mode=enums.ParseMode.MARKDOWN)
     else:
-        await CallbackQuery.edit_message_text(getattr(Helper, cb), reply_markup=keyboard)
+        default_val = getattr(Helper, cb, f"`something errors`")
+        from SONALI_MUSIC.utils.database_clone import get_custom_help_text
+        help_text = await get_custom_help_text(client.me.id, cb.lower(), default_val)
+        await CallbackQuery.edit_message_text(help_text, reply_markup=keyboard)
 
         
         
@@ -234,12 +238,14 @@ async def mb_plugin_button(client, CallbackQuery):
 
 
 @app.on_callback_query(filters.regex("ALLBOT_CP") & ~BANNED_USERS)
-async def helper_cb(client, CallbackQuery):
-    await CallbackQuery.edit_message_text(Helper.HELP_ALLBOT, reply_markup=InlineKeyboardMarkup(BUTTONS.ABUTTON))
+async def allbot_cp_cb(client, CallbackQuery):
+    from SONALI_MUSIC.utils.database_clone import get_custom_help_text
+    help_text = await get_custom_help_text(client.me.id, "about", Helper.HELP_ALLBOT)
+    await CallbackQuery.edit_message_text(help_text, reply_markup=InlineKeyboardMarkup(BUTTONS.ABUTTON))
 
         
 @app.on_callback_query(filters.regex('ALLBOT_BACK'))      
-async def mb_plugin_button(client, CallbackQuery):
+async def allbot_back_cb(client, CallbackQuery):
     callback_data = CallbackQuery.data.strip()
     cb = callback_data.split(None, 1)[1]
     keyboard = InlineKeyboardMarkup(
@@ -252,7 +258,10 @@ async def mb_plugin_button(client, CallbackQuery):
     if cb == "ALLBOT":
         await CallbackQuery.edit_message_text(f"`something errors`",reply_markup=keyboard,parse_mode=enums.ParseMode.MARKDOWN)
     else:
-        await CallbackQuery.edit_message_text(getattr(Helper, cb), reply_markup=keyboard)
+        default_val = getattr(Helper, cb, f"`something errors`")
+        from SONALI_MUSIC.utils.database_clone import get_custom_help_text
+        help_text = await get_custom_help_text(client.me.id, cb.lower(), default_val)
+        await CallbackQuery.edit_message_text(help_text, reply_markup=keyboard)
 
 
 #------------------------------------------------------------------------------------------------------------------------

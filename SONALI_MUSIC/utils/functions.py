@@ -302,3 +302,21 @@ async def time_converter(message: Message, time_value: str) -> datetime:
     else:
         return await message.reply_text("Incorrect time specified.")
     return temp_time
+
+
+async def set_default_commands(client):
+    """Sets standard bot commands automatically on the Telegram bot client in lowercase English."""
+    from pyrogram.types import BotCommand
+    try:
+        commands = [
+            BotCommand("start", "start the music bot"),
+            BotCommand("help", "get help and commands menu"),
+            BotCommand("play", "play a song in voice chat"),
+            BotCommand("settings", "configure music bot settings"),
+            BotCommand("clone", "clone this music bot"),
+            BotCommand("manage_clone", "manage your cloned bot settings"),
+            BotCommand("ping", "check bot response and stats"),
+        ]
+        await client.set_bot_commands(commands)
+    except Exception as e:
+        print(f"Error setting bot commands for {client.me.username if client.me else 'client'}: {e}")

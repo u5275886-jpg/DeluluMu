@@ -115,7 +115,8 @@ async def save_clone_bot(
     bot_name: str,
     bot_username: str,
     assistant_id: int = 1,
-    settings: Optional[Dict] = None
+    settings: Optional[Dict] = None,
+    tenant_username: Optional[str] = None
 ) -> bool:
     """Saves or updates a cloned bot in the system."""
     default_settings = {
@@ -127,7 +128,8 @@ async def save_clone_bot(
         "play_text": "🎀 **Started Streaming**\n\n🩶 **Title:** {title}\n🪐 **Duration:** {duration} minutes\n🎧 **Requested by:** {user}\n\n🎀 **Powered By:** @{bot_username}",
         "playback_preferences": "Direct",
         "queue_behavior": "Standard",
-        "custom_buttons": []
+        "custom_buttons": [],
+        "help_texts": {}
     }
 
     if settings:
@@ -138,6 +140,7 @@ async def save_clone_bot(
         {
             "$set": {
                 "tenant_id": tenant_id,
+                "tenant_username": tenant_username,
                 "bot_token": bot_token,
                 "bot_name": bot_name,
                 "bot_username": bot_username,
@@ -241,3 +244,37 @@ async def update_clone_assistant_settings(bot_id: int, mode: str, assistant_id: 
         }
     )
     return True
+
+# ----------------------------------------------------------------------
+# 5. FORCE SUBSCRIBE & HELP TEXT CUSTOMIZATIONS
+# ----------------------------------------------------------------------
+
+async def set_force_sub(channel: Optional[str]) -> bool:
+    """Sets or disables the force join channel configuration for cloning."""
+    await mongodb.clone_config.update_one(
+        {"config_id": "force_sub"},
+        {"$set": {"channel": channel}},
+        upsert=True
+    )
+    return True
+
+async def get_force_sub() -> Optional[str]:
+    """Retrieves the configured force join channel for cloning."""
+    res = await mongodb.clone_config.find_one({"config_id": "force_sub"})
+    if res:
+        return res.get("channel")
+    return None
+
+async def get_custom_help_text(bot_id: int, key: str, default_val: str) -> str:
+    """Checks and returns a customized help caption/text for a cloned bot."""
+    if not bot_id:
+        return default_val
+    try:
+        clone = await get_clone_by_id(bot_id)
+        if clone:
+            help_texts = clone.get("settings", {}).get("help_texts", {})
+            if key in help_texts and help_texts[key]:
+                return help_texts[key]
+    except Exception:
+        pass
+    return default_val

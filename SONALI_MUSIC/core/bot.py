@@ -25,6 +25,13 @@ class Sona(Client):
         self.username = self.me.username
         self.mention = self.me.mention
 
+        # Set default commands on main bot automatically
+        try:
+            from SONALI_MUSIC.utils.functions import set_default_commands
+            await set_default_commands(self)
+        except Exception as e:
+            LOGGER(__name__).error(f"Error setting default commands: {e}")
+
         try:
             await self.send_message(
                 chat_id=config.LOGGER_ID,
