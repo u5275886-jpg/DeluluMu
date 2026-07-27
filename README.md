@@ -69,3 +69,24 @@ These commands are reserved for the Platform Owner (`OWNER_ID`) and appointed **
 *   **Libraries:** Pyrogram (kurigram fork), motor (MongoDB Driver), py-tgcalls
 *   **Database:** MongoDB Atlas
 *   **API Framework:** aiohttp (Administration REST API & SSE/WebSockets)
+
+---
+
+## 🎵 How Song Playback Works (Streaming Architecture)
+
+The platform streams high-quality audio and video directly into Telegram Voice Chats/Group Calls using a multi-layered architecture:
+
+1. **Search & Metadata Extraction**:
+   * When a user runs a playback command (e.g., `/play`), the bot processes the request using **`yt-dlp`** (wrapped in the `SONALI_MUSIC.platforms.Youtube` module).
+   * It extracts the video ID, title, duration, and thumbnail of the requested content.
+
+2. **Stream URL Resolution**:
+   * The bot utilizes **`yt-dlp`** to resolve the direct streaming audio/video formats and URLs from YouTube, Spotify, or Soundcloud.
+
+3. **High-Performance Audio/Video Pipeline**:
+   * The core of the voice chat streaming is powered by **`py-tgcalls`** (configured inside `SONALI_MUSIC/core/call.py`).
+   * `py-tgcalls` converts and streams the direct media links or downloaded files directly into Telegram's WebRTC-based group call/voice chat.
+
+4. **Multi-Tenant Assistant & Load-Balancing**:
+   * The streaming is executed by an Assistant account (Userbot).
+   * The platform features a **multi-assistant load-balancer** (rotating across 5 standard system assistant clients to prevent group call limits) or allows premium users to supply a **custom session assistant** for their cloned bots, dynamically started and stopped via the `Sona` Py-Tgcalls wrapper.
