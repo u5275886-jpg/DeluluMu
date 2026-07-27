@@ -107,8 +107,17 @@ async def save_clone_bot(
         "title": f"{bot_name} Play",
         "branding_url": "https://litter.catbox.moe/vtsad2y91ytmincf.jpg",
         "welcome_text": "Welcome to my cloned music player bot!",
+        "welcome_img": "https://litter.catbox.moe/xr9jf82b2umeke7j.jpg",
+        "play_img": "https://graph.org/file/4fb9a698630aa5b47be05-060979d72b7752fc8f.jpg",
+        "play_text": "🎀 **Started Streaming**\n\n🩶 **Title:** {title}\n🪐 **Duration:** {duration} minutes\n🎧 **Requested by:** {user}\n\n🎀 **Powered By:** @{bot_username}",
         "playback_preferences": "Direct",
-        "queue_behavior": "Standard"
+        "queue_behavior": "Standard",
+        "custom_buttons": [
+            {"text": "➕ ʌᴅᴅ ϻє", "type": "url", "value": f"https://t.me/{bot_username}?startgroup=true"},
+            {"text": "⌯ sυᴘᴘσʀᴛ ⌯", "type": "url", "value": "https://t.me/Xbroze"},
+            {"text": "⌯ σwɴᴇʀ ⌯", "type": "url", "value": "https://t.me/Xbroze"},
+            {"text": "⌯ ᴧʙσυт ⌯", "type": "alert", "value": "This is a beautiful custom cloned music bot designed for high-performance audio streaming."}
+        ]
     }
 
     if settings:

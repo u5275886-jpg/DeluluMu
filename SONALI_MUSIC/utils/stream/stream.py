@@ -98,18 +98,35 @@ async def stream(
                     "video" if video else "audio",
                     forceplay=forceplay,
                 )
-                img = await get_thumb(vidid)
+                # Context-aware play message image and caption for Cloned bot
+                play_img = await get_thumb(vidid)
+                play_caption = _["stream_1"].format(
+                    f"https://t.me/{app.username}?start=info_{vidid}",
+                    title[:23],
+                    duration_min,
+                    user_name,
+                )
+
+                try:
+                    from SONALI_MUSIC.utils.database_clone import get_clone_by_id
+                    clone = await get_clone_by_id(app.id)
+                    if clone:
+                        settings = clone.get("settings", {})
+                        cust_play_img = settings.get("play_img")
+                        cust_play_text = settings.get("play_text")
+                        if cust_play_img:
+                            play_img = cust_play_img
+                        if cust_play_text:
+                            play_caption = cust_play_text.replace("{title}", title).replace("{duration}", str(duration_min)).replace("{user}", user_name).replace("{link}", f"https://t.me/{app.username}?start=info_{vidid}").replace("{bot_username}", app.username)
+                except Exception as e:
+                    print(f"Error customizing play message: {e}")
+
                 button = stream_markup(_, chat_id)
                 run = await app.send_photo(
                     original_chat_id,
-                    photo=img,
+                    photo=play_img,
                     has_spoiler=True,
-                    caption=_["stream_1"].format(
-                        f"https://t.me/{app.username}?start=info_{vidid}",
-                        title[:23],
-                        duration_min,
-                        user_name,
-                    ),
+                    caption=play_caption,
                     reply_markup=InlineKeyboardMarkup(button),
                 )
                 db[chat_id][0]["mystic"] = run
@@ -185,18 +202,35 @@ async def stream(
                 "video" if video else "audio",
                 forceplay=forceplay,
             )
-            img = await get_thumb(vidid)
+            # Context-aware play message image and caption for Cloned bot
+            play_img = await get_thumb(vidid)
+            play_caption = _["stream_1"].format(
+                f"https://t.me/{app.username}?start=info_{vidid}",
+                title[:23],
+                duration_min,
+                user_name,
+            )
+
+            try:
+                from SONALI_MUSIC.utils.database_clone import get_clone_by_id
+                clone = await get_clone_by_id(app.id)
+                if clone:
+                    settings = clone.get("settings", {})
+                    cust_play_img = settings.get("play_img")
+                    cust_play_text = settings.get("play_text")
+                    if cust_play_img:
+                        play_img = cust_play_img
+                    if cust_play_text:
+                        play_caption = cust_play_text.replace("{title}", title).replace("{duration}", str(duration_min)).replace("{user}", user_name).replace("{link}", f"https://t.me/{app.username}?start=info_{vidid}").replace("{bot_username}", app.username)
+            except Exception as e:
+                print(f"Error customizing play message: {e}")
+
             button = stream_markup(_, chat_id)
             run = await app.send_photo(
                 original_chat_id,
-                photo=img,
+                photo=play_img,
                 has_spoiler=True,
-                caption=_["stream_1"].format(
-                    f"https://t.me/{app.username}?start=info_{vidid}",
-                    title[:23],
-                    duration_min,
-                    user_name,
-                ),
+                caption=play_caption,
                 reply_markup=InlineKeyboardMarkup(button),
             )
             db[chat_id][0]["mystic"] = run
