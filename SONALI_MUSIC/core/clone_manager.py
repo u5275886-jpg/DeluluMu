@@ -62,7 +62,9 @@ class CloneManager:
             "send_message", "send_photo", "send_audio", "send_video",
             "send_animation", "send_document", "edit_message_text",
             "edit_message_caption", "edit_message_reply_markup",
-            "delete_messages", "leave_chat", "get_chat", "get_chat_member"
+            "delete_messages", "leave_chat", "get_chat", "get_chat_member",
+            "get_me", "get_users", "export_chat_invite_link",
+            "approve_chat_join_request", "add_chat_members", "resolve_peer"
         ]
 
         for method_name in methods_to_patch:

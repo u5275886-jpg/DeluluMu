@@ -138,50 +138,58 @@ def PlayWrapper(command):
                         ), reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton(text= "๏ 𝗨ɴʙᴀɴ 𝗔ssɪsᴛᴀɴᴛ ๏", callback_data=f"unban_assistant")]])
                     )
             except UserNotParticipant:
-                if chat_id in links:
-                    invitelink = links[chat_id]
-                else:
-                    if message.chat.username:
-                        invitelink = message.chat.username
-                        try:
-                            await userbot.resolve_peer(invitelink)
-                        except:
-                            pass
+                added_directly = False
+                try:
+                    await app.add_chat_members(chat_id, userbot.id)
+                    added_directly = True
+                except Exception:
+                    pass
+
+                if not added_directly:
+                    if chat_id in links:
+                        invitelink = links[chat_id]
                     else:
+                        if message.chat.username:
+                            invitelink = message.chat.username
+                            try:
+                                await userbot.resolve_peer(invitelink)
+                            except:
+                                pass
+                        else:
+                            try:
+                                invitelink = await app.export_chat_invite_link(chat_id)
+                            except ChatAdminRequired:
+                                return await message.reply_text(_["call_1"])
+                            except Exception as e:
+                                return await message.reply_text(
+                                    _["call_3"].format(app.mention, type(e).__name__)
+                                )
+
+                    if invitelink.startswith("https://t.me/+"):
+                        invitelink = invitelink.replace(
+                            "https://t.me/+", "https://t.me/joinchat/"
+                        )
+                    myu = await message.reply_text(_["call_4"].format(app.mention))
+                    try:
+                        await asyncio.sleep(1)
+                        await userbot.join_chat(invitelink)
+                    except InviteRequestSent:
                         try:
-                            invitelink = await app.export_chat_invite_link(chat_id)
-                        except ChatAdminRequired:
-                            return await message.reply_text(_["call_1"])
+                            await app.approve_chat_join_request(chat_id, userbot.id)
                         except Exception as e:
                             return await message.reply_text(
                                 _["call_3"].format(app.mention, type(e).__name__)
                             )
-
-                if invitelink.startswith("https://t.me/+"):
-                    invitelink = invitelink.replace(
-                        "https://t.me/+", "https://t.me/joinchat/"
-                    )
-                myu = await message.reply_text(_["call_4"].format(app.mention))
-                try:
-                    await asyncio.sleep(1)
-                    await userbot.join_chat(invitelink)
-                except InviteRequestSent:
-                    try:
-                        await app.approve_chat_join_request(chat_id, userbot.id)
+                        await asyncio.sleep(3)
+                        await myu.edit(_["call_5"].format(app.mention))
+                    except UserAlreadyParticipant:
+                        pass
                     except Exception as e:
                         return await message.reply_text(
                             _["call_3"].format(app.mention, type(e).__name__)
                         )
-                    await asyncio.sleep(3)
-                    await myu.edit(_["call_5"].format(app.mention))
-                except UserAlreadyParticipant:
-                    pass
-                except Exception as e:
-                    return await message.reply_text(
-                        _["call_3"].format(app.mention, type(e).__name__)
-                    )
 
-                links[chat_id] = invitelink
+                    links[chat_id] = invitelink
 
                 try:
                     await userbot.resolve_peer(chat_id)
