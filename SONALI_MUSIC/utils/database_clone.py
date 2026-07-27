@@ -127,12 +127,7 @@ async def save_clone_bot(
         "play_text": "🎀 **Started Streaming**\n\n🩶 **Title:** {title}\n🪐 **Duration:** {duration} minutes\n🎧 **Requested by:** {user}\n\n🎀 **Powered By:** @{bot_username}",
         "playback_preferences": "Direct",
         "queue_behavior": "Standard",
-        "custom_buttons": [
-            {"text": "➕ ʌᴅᴅ ϻє", "type": "url", "value": f"https://t.me/{bot_username}?startgroup=true"},
-            {"text": "⌯ sυᴘᴘσʀᴛ ⌯", "type": "url", "value": "https://t.me/Xbroze"},
-            {"text": "⌯ σwɴᴇʀ ⌯", "type": "url", "value": "https://t.me/Xbroze"},
-            {"text": "⌯ ᴧʙσυт ⌯", "type": "alert", "value": "This is a beautiful custom cloned music bot designed for high-performance audio streaming."}
-        ]
+        "custom_buttons": []
     }
 
     if settings:

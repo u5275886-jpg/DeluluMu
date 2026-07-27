@@ -23,7 +23,7 @@ async def private_panel(_, bot_id=None):
             clone = await get_clone_by_id(bot_id)
             if clone:
                 custom_buttons = clone.get("settings", {}).get("custom_buttons", [])
-                if custom_buttons:
+                if custom_buttons and len(custom_buttons) > 0:
                     buttons = []
                     for idx, btn in enumerate(custom_buttons):
                         b_text = btn.get("text", "Button")

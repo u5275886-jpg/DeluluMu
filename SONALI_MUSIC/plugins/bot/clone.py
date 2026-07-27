@@ -1296,18 +1296,13 @@ async def reset_custom_buttons_callback(client, query: CallbackQuery):
     if not is_owner and clone.get("tenant_id") != user_id:
         return await query.answer("Access Denied.", show_alert=True)
 
-    # Re-initialize to exactly 4 default buttons
-    default_buttons = [
-        {"text": "➕ ʌᴅᴅ ϻє", "type": "url", "value": f"https://t.me/{clone.get('bot_username')}?startgroup=true"},
-        {"text": "⌯ sυᴘᴘσʀᴛ ⌯", "type": "url", "value": config.SUPPORT_CHAT},
-        {"text": "⌯ σwɴᴇʀ ⌯", "type": "url", "value": f"https://t.me/{config.OWNER_USERNAME}"},
-        {"text": "⌯ ᴧʙσυт ⌯", "type": "alert", "value": "This is a beautiful custom cloned music bot designed for high-performance audio streaming."}
-    ]
+    # Re-initialize to empty to trigger main bot design fallback
+    default_buttons = []
 
     settings = clone.get("settings", {})
     settings["custom_buttons"] = default_buttons
     await update_clone_settings(bot_id, settings)
-    await query.answer("🔄 Custom buttons reset to default 4 buttons!", show_alert=True)
+    await query.answer("🔄 Custom buttons reset to inherit main bot design!", show_alert=True)
 
     await send_custom_buttons_panel(user_id, bot_id, query=query)
 
