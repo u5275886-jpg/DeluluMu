@@ -6,6 +6,7 @@ from pyrogram.errors import (
     InviteRequestSent,
     UserAlreadyParticipant,
     UserNotParticipant,
+    PeerIdInvalid,
 )
 from pyrogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 
@@ -117,9 +118,16 @@ def PlayWrapper(command):
             userbot = await get_assistant(chat_id)
             try:
                 try:
+                    if hasattr(userbot, "username") and userbot.username:
+                        try:
+                            await app.resolve_peer(userbot.username)
+                        except Exception:
+                            pass
                     get = await app.get_chat_member(chat_id, userbot.id)
                 except ChatAdminRequired:
                     return await message.reply_text(_["call_1"])
+                except (PeerIdInvalid, KeyError):
+                    raise UserNotParticipant
                 if (
                     get.status == ChatMemberStatus.BANNED
                     or get.status == ChatMemberStatus.RESTRICTED
