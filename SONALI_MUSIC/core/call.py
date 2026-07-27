@@ -88,6 +88,51 @@ class Call(PyTgCalls):
             session_string=str(config.STRING5),
         )
         self.five = PyTgCalls(self.userbot5, cache_duration=100)
+        self.custom_assistants = {}
+
+    async def start_custom_assistant(self, bot_id: int, session_string: str) -> bool:
+        await self.stop_custom_assistant(bot_id)
+        try:
+            userbot = Client(
+                name=f"CustomAss_{bot_id}",
+                api_id=config.API_ID,
+                api_hash=config.API_HASH,
+                session_string=session_string,
+                no_updates=True,
+            )
+            await userbot.start()
+            try:
+                await userbot.join_chat("kriti_bot_update")
+                await userbot.join_chat("KRITI_SUPPORT_GROUP")
+            except Exception:
+                pass
+
+            pytgcalls_client = PyTgCalls(userbot, cache_duration=100)
+            await pytgcalls_client.start()
+
+            self.custom_assistants[bot_id] = {
+                "userbot": userbot,
+                "pytgcalls": pytgcalls_client
+            }
+            LOGGER(__name__).info(f"Custom Assistant for bot {bot_id} started successfully.")
+            return True
+        except Exception as e:
+            LOGGER(__name__).error(f"Failed to start custom assistant for bot {bot_id}: {e}")
+            return False
+
+    async def stop_custom_assistant(self, bot_id: int):
+        if hasattr(self, "custom_assistants") and bot_id in self.custom_assistants:
+            data = self.custom_assistants[bot_id]
+            try:
+                await data["pytgcalls"].stop()
+            except Exception:
+                pass
+            try:
+                await data["userbot"].stop()
+            except Exception:
+                pass
+            del self.custom_assistants[bot_id]
+            LOGGER(__name__).info(f"Custom Assistant for bot {bot_id} stopped.")
 
     def _build_stream(
         self,

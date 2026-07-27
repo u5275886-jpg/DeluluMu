@@ -208,3 +208,17 @@ async def log_clone_error(bot_id: int, bot_name: str, error_msg: str):
         "error": error_msg,
         "timestamp": int(time.time())
     })
+
+async def update_clone_assistant_settings(bot_id: int, mode: str, assistant_id: int = 1, custom_session: str = None) -> bool:
+    """Updates a cloned bot assistant settings."""
+    await cloned_db.update_one(
+        {"bot_id": bot_id},
+        {
+            "$set": {
+                "assistant_mode": mode,
+                "assistant_id": assistant_id,
+                "custom_session": custom_session
+            }
+        }
+    )
+    return True

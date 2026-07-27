@@ -81,6 +81,29 @@ async def set_assistant(chat_id):
 
 
 async def get_assistant(chat_id: int) -> str:
+    from SONALI_MUSIC.core.clone_manager import current_clone_client
+    from SONALI_MUSIC.utils.database_clone import get_clone_by_id
+    from SONALI_MUSIC.core.call import Sona
+
+    clone = current_clone_client.get()
+    if clone is not None:
+        bot_id = clone.me.id
+        clone_db = await get_clone_by_id(bot_id)
+        if clone_db:
+            assistant_mode = clone_db.get('assistant_mode', 'system')
+            if assistant_mode == 'custom':
+                if hasattr(Sona, 'custom_assistants') and bot_id in Sona.custom_assistants:
+                    return Sona.custom_assistants[bot_id]['userbot']
+                else:
+                    custom_session = clone_db.get('custom_session')
+                    if custom_session:
+                        started = await Sona.start_custom_assistant(bot_id, custom_session)
+                        if started:
+                            return Sona.custom_assistants[bot_id]['userbot']
+            else:
+                assis = clone_db.get('assistant_id', 1)
+                return await get_client(assis)
+
     from SONALI_MUSIC.core.userbot import assistants
 
     assistant = assistantdict.get(chat_id)
@@ -121,6 +144,37 @@ async def set_calls_assistant(chat_id):
 
 
 async def group_assistant(self, chat_id: int) -> int:
+    from SONALI_MUSIC.core.clone_manager import current_clone_client
+    from SONALI_MUSIC.utils.database_clone import get_clone_by_id
+
+    clone = current_clone_client.get()
+    if clone is not None:
+        bot_id = clone.me.id
+        clone_db = await get_clone_by_id(bot_id)
+        if clone_db:
+            assistant_mode = clone_db.get('assistant_mode', 'system')
+            if assistant_mode == 'custom':
+                if hasattr(self, 'custom_assistants') and bot_id in self.custom_assistants:
+                    return self.custom_assistants[bot_id]['pytgcalls']
+                else:
+                    custom_session = clone_db.get('custom_session')
+                    if custom_session:
+                        started = await self.start_custom_assistant(bot_id, custom_session)
+                        if started:
+                            return self.custom_assistants[bot_id]['pytgcalls']
+            else:
+                assis = clone_db.get('assistant_id', 1)
+                if int(assis) == 1:
+                    return self.one
+                elif int(assis) == 2:
+                    return self.two
+                elif int(assis) == 3:
+                    return self.three
+                elif int(assis) == 4:
+                    return self.four
+                elif int(assis) == 5:
+                    return self.five
+
     from SONALI_MUSIC.core.userbot import assistants
 
     assistant = assistantdict.get(chat_id)
