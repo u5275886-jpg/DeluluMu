@@ -39,8 +39,68 @@ playtype = {}
 skipmode = {}
 
 
+def get_active_bot_id() -> int:
+    from SONALI_MUSIC.core.clone_manager import current_clone_client
+    from SONALI_MUSIC import app
+    clone = current_clone_client.get()
+    if clone is not None:
+        return clone.me.id if (clone.me and hasattr(clone.me, "id")) else 0
+    if hasattr(app, "_orig_id"):
+        return app._orig_id
+    return app.id if (hasattr(app, "me") and app.me) else 0
+
+
+async def get_dynamic_assistant(chat_id: int, bot_id: int) -> int:
+    from SONALI_MUSIC.core.userbot import assistants
+    if not assistants:
+        return 1
+
+    # Check memory first
+    assis = assistantdict.get((bot_id, chat_id))
+    if assis in assistants:
+        return assis
+
+    # Check DB
+    dbassistant = await assdb.find_one({"bot_id": bot_id, "chat_id": chat_id})
+    if not dbassistant:
+        # Fallback to old schema (without bot_id)
+        dbassistant = await assdb.find_one({"chat_id": chat_id, "bot_id": {"$exists": False}})
+
+    if dbassistant:
+        got_assis = dbassistant.get("assistant")
+        if got_assis in assistants:
+            # Verify if this assistant is already in use in this chat by another bot
+            used_in_chat = {val for (b_id, c_id), val in assistantdict.items() if c_id == chat_id and b_id != bot_id}
+            if got_assis not in used_in_chat:
+                assistantdict[(bot_id, chat_id)] = got_assis
+                return got_assis
+
+    # Assign dynamically with load balancing and collision-avoidance
+    used_in_chat = {val for (b_id, c_id), val in assistantdict.items() if c_id == chat_id}
+    busy_assistants = {val for (b_id, c_id), val in assistantdict.items() if c_id in active}
+
+    candidates = [a for a in assistants if a not in used_in_chat]
+    if not candidates:
+        candidates = assistants
+
+    non_busy_candidates = [a for a in candidates if a not in busy_assistants]
+    if non_busy_candidates:
+        selected = random.choice(non_busy_candidates)
+    else:
+        selected = random.choice(candidates)
+
+    assistantdict[(bot_id, chat_id)] = selected
+    await assdb.update_one(
+        {"bot_id": bot_id, "chat_id": chat_id},
+        {"$set": {"assistant": selected}},
+        upsert=True,
+    )
+    return selected
+
+
 async def get_assistant_number(chat_id: int) -> str:
-    assistant = assistantdict.get(chat_id)
+    bot_id = get_active_bot_id()
+    assistant = assistantdict.get((bot_id, chat_id))
     return assistant
 
 
@@ -59,23 +119,18 @@ async def get_client(assistant: int):
 
 async def set_assistant_new(chat_id, number):
     number = int(number)
+    bot_id = get_active_bot_id()
+    assistantdict[(bot_id, chat_id)] = number
     await assdb.update_one(
-        {"chat_id": chat_id},
+        {"bot_id": bot_id, "chat_id": chat_id},
         {"$set": {"assistant": number}},
         upsert=True,
     )
 
 
 async def set_assistant(chat_id):
-    from SONALI_MUSIC.core.userbot import assistants
-
-    ran_assistant = random.choice(assistants)
-    assistantdict[chat_id] = ran_assistant
-    await assdb.update_one(
-        {"chat_id": chat_id},
-        {"$set": {"assistant": ran_assistant}},
-        upsert=True,
-    )
+    bot_id = get_active_bot_id()
+    ran_assistant = await get_dynamic_assistant(chat_id, bot_id)
     userbot = await get_client(ran_assistant)
     return userbot
 
@@ -101,45 +156,17 @@ async def get_assistant(chat_id: int) -> str:
                         if started:
                             return Sona.custom_assistants[bot_id]['userbot']
             else:
-                assis = clone_db.get('assistant_id', 1)
+                assis = await get_dynamic_assistant(chat_id, bot_id)
                 return await get_client(assis)
 
-    from SONALI_MUSIC.core.userbot import assistants
-
-    assistant = assistantdict.get(chat_id)
-    if not assistant:
-        dbassistant = await assdb.find_one({"chat_id": chat_id})
-        if not dbassistant:
-            userbot = await set_assistant(chat_id)
-            return userbot
-        else:
-            got_assis = dbassistant["assistant"]
-            if got_assis in assistants:
-                assistantdict[chat_id] = got_assis
-                userbot = await get_client(got_assis)
-                return userbot
-            else:
-                userbot = await set_assistant(chat_id)
-                return userbot
-    else:
-        if assistant in assistants:
-            userbot = await get_client(assistant)
-            return userbot
-        else:
-            userbot = await set_assistant(chat_id)
-            return userbot
+    bot_id = get_active_bot_id()
+    assis = await get_dynamic_assistant(chat_id, bot_id)
+    return await get_client(assis)
 
 
 async def set_calls_assistant(chat_id):
-    from SONALI_MUSIC.core.userbot import assistants
-
-    ran_assistant = random.choice(assistants)
-    assistantdict[chat_id] = ran_assistant
-    await assdb.update_one(
-        {"chat_id": chat_id},
-        {"$set": {"assistant": ran_assistant}},
-        upsert=True,
-    )
+    bot_id = get_active_bot_id()
+    ran_assistant = await get_dynamic_assistant(chat_id, bot_id)
     return ran_assistant
 
 
@@ -163,7 +190,7 @@ async def group_assistant(self, chat_id: int) -> int:
                         if started:
                             return self.custom_assistants[bot_id]['pytgcalls']
             else:
-                assis = clone_db.get('assistant_id', 1)
+                assis = await get_dynamic_assistant(chat_id, bot_id)
                 if int(assis) == 1:
                     return self.one
                 elif int(assis) == 2:
@@ -175,25 +202,8 @@ async def group_assistant(self, chat_id: int) -> int:
                 elif int(assis) == 5:
                     return self.five
 
-    from SONALI_MUSIC.core.userbot import assistants
-
-    assistant = assistantdict.get(chat_id)
-    if not assistant:
-        dbassistant = await assdb.find_one({"chat_id": chat_id})
-        if not dbassistant:
-            assis = await set_calls_assistant(chat_id)
-        else:
-            assis = dbassistant["assistant"]
-            if assis in assistants:
-                assistantdict[chat_id] = assis
-                assis = assis
-            else:
-                assis = await set_calls_assistant(chat_id)
-    else:
-        if assistant in assistants:
-            assis = assistant
-        else:
-            assis = await set_calls_assistant(chat_id)
+    bot_id = get_active_bot_id()
+    assis = await get_dynamic_assistant(chat_id, bot_id)
     if int(assis) == 1:
         return self.one
     elif int(assis) == 2:
@@ -204,7 +214,6 @@ async def group_assistant(self, chat_id: int) -> int:
         return self.four
     elif int(assis) == 5:
         return self.five
-
 
 async def is_skipmode(chat_id: int) -> bool:
     mode = skipmode.get(chat_id)
