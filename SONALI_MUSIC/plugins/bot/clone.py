@@ -248,7 +248,11 @@ async def manage_bot_details_panel(client, query: CallbackQuery):
     user_id = query.from_user.id
 
     clone = await get_clone_by_id(bot_id)
-    if not clone or clone.get("tenant_id") != user_id:
+    if not clone:
+        return await query.answer("Clone not found.", show_alert=True)
+
+    is_owner = (user_id == config.OWNER_ID)
+    if not is_owner and clone.get("tenant_id") != user_id:
         return await query.answer("Access Denied.", show_alert=True)
 
     await send_bot_details_panel(user_id, bot_id, query=query)
@@ -264,7 +268,10 @@ async def edit_brand_callback(client, query: CallbackQuery):
     user_id = query.from_user.id
 
     clone = await get_clone_by_id(bot_id)
-    if not clone or clone.get("tenant_id") != user_id:
+    if not clone:
+        return await query.answer("Clone not found.", show_alert=True)
+    is_owner = (user_id == config.OWNER_ID)
+    if not is_owner and clone.get("tenant_id") != user_id:
         return await query.answer("Access Denied.", show_alert=True)
 
     settings = clone.get("settings", {})
@@ -336,7 +343,10 @@ async def edit_assistant_callback(client, query: CallbackQuery):
     user_id = query.from_user.id
 
     clone = await get_clone_by_id(bot_id)
-    if not clone or clone.get("tenant_id") != user_id:
+    if not clone:
+        return await query.answer("Clone not found.", show_alert=True)
+    is_owner = (user_id == config.OWNER_ID)
+    if not is_owner and clone.get("tenant_id") != user_id:
         return await query.answer("Access Denied.", show_alert=True)
 
     assistant_mode = clone.get("assistant_mode", "system").upper()
@@ -383,7 +393,10 @@ async def set_sys_assistant_callback(client, query: CallbackQuery):
     user_id = query.from_user.id
 
     clone = await get_clone_by_id(bot_id)
-    if not clone or clone.get("tenant_id") != user_id:
+    if not clone:
+        return await query.answer("Clone not found.", show_alert=True)
+    is_owner = (user_id == config.OWNER_ID)
+    if not is_owner and clone.get("tenant_id") != user_id:
         return await query.answer("Access Denied.", show_alert=True)
 
     # Stop custom assistant first if active
@@ -421,7 +434,10 @@ async def edit_play_callback(client, query: CallbackQuery):
     user_id = query.from_user.id
 
     clone = await get_clone_by_id(bot_id)
-    if not clone or clone.get("tenant_id") != user_id:
+    if not clone:
+        return await query.answer("Clone not found.", show_alert=True)
+    is_owner = (user_id == config.OWNER_ID)
+    if not is_owner and clone.get("tenant_id") != user_id:
         return await query.answer("Access Denied.", show_alert=True)
 
     settings = clone.get("settings", {})
@@ -442,7 +458,10 @@ async def edit_queue_callback(client, query: CallbackQuery):
     user_id = query.from_user.id
 
     clone = await get_clone_by_id(bot_id)
-    if not clone or clone.get("tenant_id") != user_id:
+    if not clone:
+        return await query.answer("Clone not found.", show_alert=True)
+    is_owner = (user_id == config.OWNER_ID)
+    if not is_owner and clone.get("tenant_id") != user_id:
         return await query.answer("Access Denied.", show_alert=True)
 
     settings = clone.get("settings", {})
@@ -463,7 +482,10 @@ async def delete_confirm_callback(client, query: CallbackQuery):
     user_id = query.from_user.id
 
     clone = await get_clone_by_id(bot_id)
-    if not clone or clone.get("tenant_id") != user_id:
+    if not clone:
+        return await query.answer("Clone not found.", show_alert=True)
+    is_owner = (user_id == config.OWNER_ID)
+    if not is_owner and clone.get("tenant_id") != user_id:
         return await query.answer("Access Denied.", show_alert=True)
 
     text = (
@@ -489,7 +511,10 @@ async def delete_yes_callback(client, query: CallbackQuery):
     user_id = query.from_user.id
 
     clone = await get_clone_by_id(bot_id)
-    if not clone or clone.get("tenant_id") != user_id:
+    if not clone:
+        return await query.answer("Clone not found.", show_alert=True)
+    is_owner = (user_id == config.OWNER_ID)
+    if not is_owner and clone.get("tenant_id") != user_id:
         return await query.answer("Access Denied.", show_alert=True)
 
     # Stop clone inside manager
@@ -763,7 +788,10 @@ async def edit_welcome_sub_panel_callback(client, query: CallbackQuery):
     user_id = query.from_user.id
 
     clone = await get_clone_by_id(bot_id)
-    if not clone or clone.get("tenant_id") != user_id:
+    if not clone:
+        return await query.answer("Clone not found.", show_alert=True)
+    is_owner = (user_id == config.OWNER_ID)
+    if not is_owner and clone.get("tenant_id") != user_id:
         return await query.answer("Access Denied.", show_alert=True)
 
     settings = clone.get("settings", {})
@@ -835,7 +863,10 @@ async def edit_play_custom_callback(client, query: CallbackQuery):
     user_id = query.from_user.id
 
     clone = await get_clone_by_id(bot_id)
-    if not clone or clone.get("tenant_id") != user_id:
+    if not clone:
+        return await query.answer("Clone not found.", show_alert=True)
+    is_owner = (user_id == config.OWNER_ID)
+    if not is_owner and clone.get("tenant_id") != user_id:
         return await query.answer("Access Denied.", show_alert=True)
 
     settings = clone.get("settings", {})
@@ -931,7 +962,10 @@ async def send_custom_buttons_panel(chat_id, bot_id, reply_to_message_id=None, q
 
     buttons = [
         [
+            InlineKeyboardButton("➕ ᴀᴅᴅ ʙᴜᴛᴛᴏɴ", callback_data=f"ADD_CUST_BTN_{bot_id}"),
             InlineKeyboardButton("✏️ ᴇᴅɪᴛ ʙᴜᴛᴛᴏɴ", callback_data=f"EDIT_CUST_BTN_{bot_id}"),
+        ],
+        [
             InlineKeyboardButton("🔄 ʀᴇsᴇᴛ ᴛᴏ ᴅᴇғᴀᴜʟᴛ", callback_data=f"RESET_CUST_BTN_{bot_id}")
         ],
         [
@@ -951,7 +985,10 @@ async def manage_custom_buttons_callback(client, query: CallbackQuery):
     user_id = query.from_user.id
 
     clone = await get_clone_by_id(bot_id)
-    if not clone or clone.get("tenant_id") != user_id:
+    if not clone:
+        return await query.answer("Clone not found.", show_alert=True)
+    is_owner = (user_id == config.OWNER_ID)
+    if not is_owner and clone.get("tenant_id") != user_id:
         return await query.answer("Access Denied.", show_alert=True)
 
     await send_custom_buttons_panel(user_id, bot_id, query=query)
@@ -1008,13 +1045,37 @@ async def choose_button_type_callback(client, query: CallbackQuery):
 
 
 
+@app.on_callback_query(filters.regex("^ADD_CUST_BTN_(\\d+)$"))
+async def add_custom_button_init_callback(client, query: CallbackQuery):
+    bot_id = int(query.data.split("_")[3])
+    user_id = query.from_user.id
+
+    clone = await get_clone_by_id(bot_id)
+    if not clone:
+        return await query.answer("Clone not found.", show_alert=True)
+    is_owner = (user_id == config.OWNER_ID)
+    if not is_owner and clone.get("tenant_id") != user_id:
+        return await query.answer("Access Denied.", show_alert=True)
+
+    user_states[user_id] = {"action": "wait_for_btn_text", "bot_id": bot_id}
+    await query.message.reply_text(
+        f"➕ **『 ᴀᴅᴅ ᴄᴜsᴛᴏᴍ ɪɴʟɪɴᴇ ʙᴜᴛᴛᴏɴ 』**\n\n"
+        f"ᴘʟᴇᴀsᴇ sᴇɴᴅ ᴛʜᴇ **ᴛᴇxᴛ** (label) for the new button (e.g. `Join Channel`):\n\n"
+        f"*(Send /cancel to cancel this operation)*"
+    )
+    await query.answer()
+
+
 @app.on_callback_query(filters.regex("^EDIT_CUST_BTN_(\\d+)$"))
 async def edit_custom_buttons_list_callback(client, query: CallbackQuery):
     bot_id = int(query.data.split("_")[3])
     user_id = query.from_user.id
 
     clone = await get_clone_by_id(bot_id)
-    if not clone or clone.get("tenant_id") != user_id:
+    if not clone:
+        return await query.answer("Clone not found.", show_alert=True)
+    is_owner = (user_id == config.OWNER_ID)
+    if not is_owner and clone.get("tenant_id") != user_id:
         return await query.answer("Access Denied.", show_alert=True)
 
     custom_buttons = clone.get("settings", {}).get("custom_buttons", [])
@@ -1045,7 +1106,10 @@ async def select_edit_custom_button_callback(client, query: CallbackQuery):
     user_id = query.from_user.id
 
     clone = await get_clone_by_id(bot_id)
-    if not clone or clone.get("tenant_id") != user_id:
+    if not clone:
+        return await query.answer("Clone not found.", show_alert=True)
+    is_owner = (user_id == config.OWNER_ID)
+    if not is_owner and clone.get("tenant_id") != user_id:
         return await query.answer("Access Denied.", show_alert=True)
 
     custom_buttons = clone.get("settings", {}).get("custom_buttons", [])
@@ -1067,7 +1131,8 @@ async def select_edit_custom_button_callback(client, query: CallbackQuery):
             InlineKeyboardButton("⚙️ ᴇᴅɪᴛ ᴛʏᴘᴇ", callback_data=f"FIELD_EDIT_CUST_BTN_{bot_id}_{idx}_type")
         ],
         [
-            InlineKeyboardButton("🔗 ᴇᴅɪᴛ ᴠᴀʟᴜᴇ", callback_data=f"FIELD_EDIT_CUST_BTN_{bot_id}_{idx}_value")
+            InlineKeyboardButton("🔗 ᴇᴅɪᴛ ᴠᴀʟᴜᴇ", callback_data=f"FIELD_EDIT_CUST_BTN_{bot_id}_{idx}_value"),
+            InlineKeyboardButton("🗑️ ᴅᴇʟᴇᴛᴇ ʙᴜᴛᴛᴏɴ", callback_data=f"DELETE_CUST_BTN_{bot_id}_{idx}")
         ],
         [
             InlineKeyboardButton("🔙 ʙᴀᴄᴋ", callback_data=f"EDIT_CUST_BTN_{bot_id}")
@@ -1076,6 +1141,33 @@ async def select_edit_custom_button_callback(client, query: CallbackQuery):
 
     await query.message.edit_text(text, reply_markup=InlineKeyboardMarkup(buttons))
     await query.answer()
+
+
+@app.on_callback_query(filters.regex("^DELETE_CUST_BTN_(\\d+)_(\\d+)$"))
+async def delete_custom_button_callback(client, query: CallbackQuery):
+    parts = query.data.split("_")
+    bot_id = int(parts[3])
+    idx = int(parts[4])
+    user_id = query.from_user.id
+
+    clone = await get_clone_by_id(bot_id)
+    if not clone:
+        return await query.answer("Clone not found.", show_alert=True)
+    is_owner = (user_id == config.OWNER_ID)
+    if not is_owner and clone.get("tenant_id") != user_id:
+        return await query.answer("Access Denied.", show_alert=True)
+
+    settings = clone.get("settings", {})
+    custom_buttons = settings.get("custom_buttons", [])
+    if idx < len(custom_buttons):
+        deleted_btn = custom_buttons.pop(idx)
+        settings["custom_buttons"] = custom_buttons
+        await update_clone_settings(bot_id, settings)
+        await query.answer(f"🗑️ Deleted button: {deleted_btn.get('text')}", show_alert=True)
+    else:
+        await query.answer("❌ Button not found.", show_alert=True)
+
+    await send_custom_buttons_panel(user_id, bot_id, query=query)
 
 
 @app.on_callback_query(filters.regex("^FIELD_EDIT_CUST_BTN_(\\d+)_(\\d+)_(text|type|value)$"))
@@ -1087,7 +1179,10 @@ async def field_edit_custom_button_callback(client, query: CallbackQuery):
     user_id = query.from_user.id
 
     clone = await get_clone_by_id(bot_id)
-    if not clone or clone.get("tenant_id") != user_id:
+    if not clone:
+        return await query.answer("Clone not found.", show_alert=True)
+    is_owner = (user_id == config.OWNER_ID)
+    if not is_owner and clone.get("tenant_id") != user_id:
         return await query.answer("Access Denied.", show_alert=True)
 
     custom_buttons = clone.get("settings", {}).get("custom_buttons", [])
@@ -1170,7 +1265,10 @@ async def save_edit_custom_button_type_callback(client, query: CallbackQuery):
     user_id = query.from_user.id
 
     clone = await get_clone_by_id(bot_id)
-    if not clone or clone.get("tenant_id") != user_id:
+    if not clone:
+        return await query.answer("Clone not found.", show_alert=True)
+    is_owner = (user_id == config.OWNER_ID)
+    if not is_owner and clone.get("tenant_id") != user_id:
         return await query.answer("Access Denied.", show_alert=True)
 
     settings = clone.get("settings", {})
@@ -1192,7 +1290,10 @@ async def reset_custom_buttons_callback(client, query: CallbackQuery):
     user_id = query.from_user.id
 
     clone = await get_clone_by_id(bot_id)
-    if not clone or clone.get("tenant_id") != user_id:
+    if not clone:
+        return await query.answer("Clone not found.", show_alert=True)
+    is_owner = (user_id == config.OWNER_ID)
+    if not is_owner and clone.get("tenant_id") != user_id:
         return await query.answer("Access Denied.", show_alert=True)
 
     # Re-initialize to exactly 4 default buttons
