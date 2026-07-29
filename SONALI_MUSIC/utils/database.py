@@ -50,6 +50,25 @@ def get_active_bot_id() -> int:
     return app.id if (hasattr(app, "me") and app.me) else 0
 
 
+async def get_log_group_id() -> int:
+    from SONALI_MUSIC.core.clone_manager import current_clone_client
+    from SONALI_MUSIC.utils.database_clone import get_clone_by_id
+    import config
+
+    clone = current_clone_client.get()
+    if clone is not None:
+        bot_id = clone.me.id
+        clone_db = await get_clone_by_id(bot_id)
+        if clone_db:
+            log_group_id = clone_db.get("log_group_id")
+            if log_group_id is not None:
+                try:
+                    return int(log_group_id)
+                except ValueError:
+                    pass
+    return config.LOGGER_ID
+
+
 async def get_dynamic_assistant(chat_id: int, bot_id: int) -> int:
     from SONALI_MUSIC.core.userbot import assistants
     if not assistants:
@@ -139,25 +158,27 @@ async def get_assistant(chat_id: int) -> str:
     from SONALI_MUSIC.core.clone_manager import current_clone_client
     from SONALI_MUSIC.utils.database_clone import get_clone_by_id
     from SONALI_MUSIC.core.call import Sona
+    from SONALI_MUSIC.utils.exceptions import AssistantErr
 
     clone = current_clone_client.get()
     if clone is not None:
         bot_id = clone.me.id
         clone_db = await get_clone_by_id(bot_id)
         if clone_db:
-            assistant_mode = clone_db.get('assistant_mode', 'system')
-            if assistant_mode == 'custom':
+            custom_session = clone_db.get('custom_session')
+            if custom_session:
                 if hasattr(Sona, 'custom_assistants') and bot_id in Sona.custom_assistants:
                     return Sona.custom_assistants[bot_id]['userbot']
                 else:
-                    custom_session = clone_db.get('custom_session')
-                    if custom_session:
-                        started = await Sona.start_custom_assistant(bot_id, custom_session)
-                        if started:
-                            return Sona.custom_assistants[bot_id]['userbot']
-            else:
-                assis = await get_dynamic_assistant(chat_id, bot_id)
-                return await get_client(assis)
+                    started = await Sona.start_custom_assistant(bot_id, custom_session)
+                    if started:
+                        return Sona.custom_assistants[bot_id]['userbot']
+                    else:
+                        raise AssistantErr("❖ <b>ᴄᴜsᴛᴏᴍ ᴀssɪsᴛᴀɴᴛ ᴇʀʀᴏʀ</b>\n\nʏᴏᴜʀ ᴄᴜsᴛᴏᴍ ᴀssɪsᴛᴀɴᴛ sᴇssɪᴏɴ sᴛʀɪɴɢ ɪs ɪɴᴠᴀʟɪᴅ ᴏʀ ᴄᴏᴜʟᴅ ɴᴏᴛ ʙᴇ sᴛᴀʀᴛᴇᴅ. ᴘʟᴇᴀsᴇ ᴜᴘᴅᴀᴛᴇ ɪᴛ ᴠɪᴀ `/manage_clone`.")
+
+            # If no custom session is set at all
+            assis = await get_dynamic_assistant(chat_id, bot_id)
+            return await get_client(assis)
 
     bot_id = get_active_bot_id()
     assis = await get_dynamic_assistant(chat_id, bot_id)
@@ -173,34 +194,36 @@ async def set_calls_assistant(chat_id):
 async def group_assistant(self, chat_id: int) -> int:
     from SONALI_MUSIC.core.clone_manager import current_clone_client
     from SONALI_MUSIC.utils.database_clone import get_clone_by_id
+    from SONALI_MUSIC.utils.exceptions import AssistantErr
 
     clone = current_clone_client.get()
     if clone is not None:
         bot_id = clone.me.id
         clone_db = await get_clone_by_id(bot_id)
         if clone_db:
-            assistant_mode = clone_db.get('assistant_mode', 'system')
-            if assistant_mode == 'custom':
+            custom_session = clone_db.get('custom_session')
+            if custom_session:
                 if hasattr(self, 'custom_assistants') and bot_id in self.custom_assistants:
                     return self.custom_assistants[bot_id]['pytgcalls']
                 else:
-                    custom_session = clone_db.get('custom_session')
-                    if custom_session:
-                        started = await self.start_custom_assistant(bot_id, custom_session)
-                        if started:
-                            return self.custom_assistants[bot_id]['pytgcalls']
-            else:
-                assis = await get_dynamic_assistant(chat_id, bot_id)
-                if int(assis) == 1:
-                    return self.one
-                elif int(assis) == 2:
-                    return self.two
-                elif int(assis) == 3:
-                    return self.three
-                elif int(assis) == 4:
-                    return self.four
-                elif int(assis) == 5:
-                    return self.five
+                    started = await self.start_custom_assistant(bot_id, custom_session)
+                    if started:
+                        return self.custom_assistants[bot_id]['pytgcalls']
+                    else:
+                        raise AssistantErr("❖ <b>ᴄᴜsᴛᴏᴍ ᴀssɪsᴛᴀɴᴛ ᴇʀʀᴏʀ</b>\n\nʏᴏᴜʀ ᴄᴜsᴛᴏᴍ ᴀssɪsᴛᴀɴᴛ sᴇssɪᴏɴ sᴛʀɪɴɢ ɪs ɪɴᴠᴀʟɪᴅ ᴏʀ ᴄᴏᴜʟᴅ ɴᴏᴛ ʙᴇ sᴛᴀʀᴛᴇᴅ. ᴘʟᴇᴀsᴇ ᴜᴘᴅᴀᴛᴇ ɪᴛ ᴠɪᴀ `/manage_clone`.")
+
+            # If no custom session is set at all
+            assis = await get_dynamic_assistant(chat_id, bot_id)
+            if int(assis) == 1:
+                return self.one
+            elif int(assis) == 2:
+                return self.two
+            elif int(assis) == 3:
+                return self.three
+            elif int(assis) == 4:
+                return self.four
+            elif int(assis) == 5:
+                return self.five
 
     bot_id = get_active_bot_id()
     assis = await get_dynamic_assistant(chat_id, bot_id)

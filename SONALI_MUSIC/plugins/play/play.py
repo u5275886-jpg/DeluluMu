@@ -366,8 +366,10 @@ async def play_commnd(
                 await Sona.stream_call(url)
             except NoActiveGroupCall:
                 await mystic.edit_text(_["black_9"])
+                from SONALI_MUSIC.utils.database import get_log_group_id
+                log_group_id = await get_log_group_id()
                 return await app.send_message(
-                    chat_id=config.LOGGER_ID,
+                    chat_id=log_group_id,
                     text=_["play_17"],
                 )
             except Exception as e:

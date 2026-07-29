@@ -108,6 +108,20 @@ class Call(PyTgCalls):
                 pass
 
             pytgcalls_client = PyTgCalls(userbot, cache_duration=100)
+
+            @pytgcalls_client.on_update()
+            async def _update_handler(_, update: types.Update, _client=pytgcalls_client):
+                if isinstance(update, types.StreamEnded):
+                    if update.stream_type == types.StreamEnded.Type.AUDIO:
+                        await self.change_stream(_client, update.chat_id)
+                elif isinstance(update, types.ChatUpdate):
+                    if update.status in [
+                        types.ChatUpdate.Status.KICKED,
+                        types.ChatUpdate.Status.LEFT_GROUP,
+                        types.ChatUpdate.Status.CLOSED_VOICE_CHAT,
+                    ]:
+                        await self.stop_stream(update.chat_id)
+
             await pytgcalls_client.start()
 
             self.custom_assistants[bot_id] = {
@@ -210,6 +224,11 @@ class Call(PyTgCalls):
                 continue
             try:
                 await client.leave_call(chat_id, close=False)
+            except Exception:
+                pass
+        for bot_id, data in getattr(self, "custom_assistants", {}).items():
+            try:
+                await data["pytgcalls"].leave_call(chat_id, close=False)
             except Exception:
                 pass
         try:

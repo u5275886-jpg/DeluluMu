@@ -18,6 +18,7 @@ from SONALI_MUSIC.utils.database import (
     get_lang,
     is_banned_user,
     is_on_off,
+    get_log_group_id,
 )
 from SONALI_MUSIC.utils.decorators.language import LanguageStart
 from SONALI_MUSIC.utils.formatters import get_readable_time
@@ -53,8 +54,9 @@ async def start_pm(client, message: Message, _):
         if name[0:3] == "sud":
             await sudoers_list(client=client, message=message, _=_)
             if await is_on_off(2):
+                log_group_id = await get_log_group_id()
                 return await app.send_message(
-                    chat_id=config.LOGGER_ID,
+                    chat_id=log_group_id,
                     text=f"{message.from_user.mention} ᴊᴜsᴛ sᴛᴀʀᴛᴇᴅ ᴛʜᴇ ʙᴏᴛ ᴛᴏ ᴄʜᴇᴄᴋ <b>sᴜᴅᴏʟɪsᴛ</b>.\n\n<b>ᴜsᴇʀ ɪᴅ :</b> <code>{message.from_user.id}</code>\n<b>ᴜsᴇʀɴᴀᴍᴇ :</b> @{message.from_user.username}",
                 )
             return
@@ -92,8 +94,9 @@ async def start_pm(client, message: Message, _):
                 has_spoiler=True,
             )
             if await is_on_off(2):
+                log_group_id = await get_log_group_id()
                 return await app.send_message(
-                    chat_id=config.LOGGER_ID,
+                    chat_id=log_group_id,
                     text=f"{message.from_user.mention} ᴊᴜsᴛ sᴛᴀʀᴛᴇᴅ ᴛʜᴇ ʙᴏᴛ ᴛᴏ ᴄʜᴇᴄᴋ <b>ᴛʀᴀᴄᴋ ɪɴғᴏʀᴍᴀᴛɪᴏɴ</b>.\n\n<b>ᴜsᴇʀ ɪᴅ :</b> <code>{message.from_user.id}</code>\n<b>ᴜsᴇʀɴᴀᴍᴇ :</b> @{message.from_user.username}",
                 )
     else:
@@ -140,8 +143,9 @@ async def start_pm(client, message: Message, _):
             has_spoiler=True,
         )
         if await is_on_off(2):
+            log_group_id = await get_log_group_id()
             return await app.send_message(
-                chat_id=config.LOGGER_ID,
+                chat_id=log_group_id,
                 text=f"{message.from_user.mention} 🚀 Just Started the Bot!.\n\n<b>🆔 Telegram ID :</b> <code>{message.from_user.id}</code>\n<b>🔗 Username:  :</b> @{message.from_user.username}",
             )
  

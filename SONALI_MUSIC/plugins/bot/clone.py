@@ -14,7 +14,8 @@ from SONALI_MUSIC.utils.database_clone import (
     update_clone_settings,
     get_clone_by_id,
     log_audit_trail,
-    update_clone_assistant_settings
+    update_clone_assistant_settings,
+    update_clone_log_group
 )
 from SONALI_MUSIC.utils.Sona_font import Fonts
 
@@ -63,6 +64,7 @@ async def send_bot_details_panel(chat_id, bot_id, reply_to_message_id=None, quer
         f" ├ 🎤 **ᴀssɪsᴛᴀɴᴛ sᴇᴛᴛɪɴɢ:** {assistant_mode} (ᴀssɪsᴛᴀɴᴛ {assistant_id if assistant_mode == 'SYSTEM' else 'ᴄᴜsᴛᴏᴍ'})\n"
         f" ├ 📥 **ᴘʟᴀʏ ᴘʀᴇғᴇʀᴇɴᴄᴇ:** {settings.get('playback_preferences')}\n"
         f" ├ 🔄 **ǫᴜᴇᴜᴇ ʙᴇʜᴀᴠɪᴏʀ:** {settings.get('queue_behavior')}\n"
+        f" ├ 📋 **ʟᴏɢ ɢʀᴏᴜᴘ ɪᴅ:** {clone.get('log_group_id') or 'Not Configured'}\n"
         f" ├ 👋 **ᴡᴇʟᴄᴏᴍᴇ ᴛᴇxᴛ:** {welcome_text}\n"
         f" ├ 🖼️ **ᴡᴇʟᴄᴏᴍᴇ ɪᴍᴀɢᴇ:** [ᴠɪᴇᴡ ɪᴍᴀɢᴇ]({welcome_img})\n"
         f" ├ 🖼️ **ᴘʟᴀʏ ɪᴍᴀɢᴇ:** [ᴠɪᴇᴡ ɪᴍᴀɢᴇ]({play_img})\n"
@@ -88,6 +90,9 @@ async def send_bot_details_panel(chat_id, bot_id, reply_to_message_id=None, quer
         ],
         [
             InlineKeyboardButton("🔄 ǫᴜᴇᴜᴇ ʙᴇʜᴀᴠɪᴏʀ", callback_data=f"EDIT_QUEUE_{bot_id}"),
+            InlineKeyboardButton("📝 sᴇᴛ ʟᴏɢ ɢʀᴏᴜᴘ", callback_data=f"EDIT_LOG_GROUP_{bot_id}")
+        ],
+        [
             InlineKeyboardButton("⚠️ ᴅᴇʟᴇᴛᴇ ᴄʟᴏɴᴇ", callback_data=f"DELETE_CONFIRM_{bot_id}")
         ],
         [
@@ -526,6 +531,30 @@ async def edit_queue_callback(client, query: CallbackQuery):
     await send_bot_details_panel(user_id, bot_id, query=query)
 
 
+@app.on_callback_query(filters.regex("^EDIT_LOG_GROUP_(\\d+)$"))
+async def edit_log_group_callback(client, query: CallbackQuery):
+    bot_id = int(query.data.split("_")[3])
+    user_id = query.from_user.id
+
+    clone = await get_clone_by_id(bot_id)
+    if not clone:
+        return await query.answer("Clone not found.", show_alert=True)
+    is_owner = (user_id == config.OWNER_ID)
+    if not is_owner and clone.get("tenant_id") != user_id:
+        return await query.answer("Access Denied.", show_alert=True)
+
+    user_states[user_id] = {"action": "wait_for_log_group", "bot_id": bot_id}
+    await query.message.reply_text(
+        f"📝 **『 sᴇᴛ ʟᴏɢ ɢʀᴏᴜᴘ ɪᴅ 』**\n\n"
+        f"ᴘʟᴇᴀsᴇ sᴇɴᴅ ʏᴏᴜʀ ʟᴏɢ ɢʀᴏᴜᴘ ɪᴅ (e.g. `-1001234567890`):\n\n"
+        f"⚠️ **ɪᴍᴘᴏʀᴛᴀɴᴛ:**\n"
+        f" - Ensure that both your cloned bot and the assistant have been added to this group as admins.\n"
+        f" - Send `/reset` to clear the log group configuration.\n"
+        f" - Send `/cancel` to abort."
+    )
+    await query.answer()
+
+
 @app.on_callback_query(filters.regex("^DELETE_CONFIRM_(\\d+)$"))
 async def delete_confirm_callback(client, query: CallbackQuery):
     bot_id = int(query.data.split("_")[2])
@@ -849,6 +878,27 @@ async def handle_user_input_state(client, message: Message):
             await send_bot_details_panel(user_id, bot_id)
         else:
             await status_msg.edit_text("❌ **Failed to start Custom Assistant inside Call manager.**")
+
+    elif action == "wait_for_log_group":
+        text_val = message.text.strip()
+        if text_val == "/reset":
+            await update_clone_log_group(bot_id, None)
+            del user_states[user_id]
+            await message.reply_text("✅ **Log Group ID reset to default (system main log group).**")
+            await send_bot_details_panel(user_id, bot_id)
+            return
+
+        try:
+            log_group_id = int(text_val)
+        except ValueError:
+            return await message.reply_text("❌ **Invalid ID! Please send a valid integer (e.g., -1001234567890). Try again or send /cancel:**")
+
+        await update_clone_log_group(bot_id, log_group_id)
+        del user_states[user_id]
+
+        await message.reply_text(f"✅ **Log Group ID successfully set to:** `{log_group_id}`")
+        await send_bot_details_panel(user_id, bot_id)
+        return
 
 
 # ----------------------------------------------------------------------
