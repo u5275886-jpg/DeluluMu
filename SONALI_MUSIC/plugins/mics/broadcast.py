@@ -59,7 +59,13 @@ async def braodcast_message(client, message, _):
         sent = 0
         pin = 0
 
-        chats = [int(chat["chat_id"]) for chat in await get_served_chats()]
+        from SONALI_MUSIC.core.clone_manager import current_clone_client
+        clone = current_clone_client.get()
+        if clone is not None:
+            from SONALI_MUSIC.utils.database_clone import get_cloned_served_chats
+            chats = await get_cloned_served_chats(clone.me.id)
+        else:
+            chats = [int(chat["chat_id"]) for chat in await get_served_chats()]
 
         for i in chats:
             try:
@@ -103,7 +109,13 @@ async def braodcast_message(client, message, _):
     if "-user" in message.text:
         susr = 0
 
-        users = [int(user["user_id"]) for user in await get_served_users()]
+        from SONALI_MUSIC.core.clone_manager import current_clone_client
+        clone = current_clone_client.get()
+        if clone is not None:
+            from SONALI_MUSIC.utils.database_clone import get_cloned_served_users
+            users = await get_cloned_served_users(clone.me.id)
+        else:
+            users = [int(user["user_id"]) for user in await get_served_users()]
 
         for i in users:
             try:
@@ -125,37 +137,42 @@ async def braodcast_message(client, message, _):
 
     # ================= ASSISTANT BROADCAST =================
     if "-assistant" in message.text:
-        aw = await message.reply_text(_["broad_5"])
-        text = _["broad_6"]
+        from SONALI_MUSIC.core.clone_manager import current_clone_client
+        clone = current_clone_client.get()
+        if clone is not None:
+            await message.reply_text("❌ Assistant broadcast is not supported on cloned bots.")
+        else:
+            aw = await message.reply_text(_["broad_5"])
+            text = _["broad_6"]
 
-        from PURVIMUSIC.core.userbot import assistants
+            from SONALI_MUSIC.core.userbot import assistants
 
-        for num in assistants:
-            sent = 0
-            client = await get_client(num)
+            for num in assistants:
+                sent = 0
+                client = await get_client(num)
 
-            async for dialog in client.get_dialogs():
-                try:
-                    if message.reply_to_message:
-                        await client.copy_message(
-                            chat_id=dialog.chat.id,
-                            from_chat_id=y,
-                            message_id=x
-                        )
-                    else:
-                        await client.send_message(dialog.chat.id, text=query)
+                async for dialog in client.get_dialogs():
+                    try:
+                        if message.reply_to_message:
+                            await client.copy_message(
+                                chat_id=dialog.chat.id,
+                                from_chat_id=y,
+                                message_id=x
+                            )
+                        else:
+                            await client.send_message(dialog.chat.id, text=query)
 
-                    sent += 1
-                    await asyncio.sleep(2)
+                        sent += 1
+                        await asyncio.sleep(2)
 
-                except FloodWait as fw:
-                    await asyncio.sleep(fw.value)
-                except:
-                    continue
+                    except FloodWait as fw:
+                        await asyncio.sleep(fw.value)
+                    except:
+                        continue
 
-            text += _["broad_7"].format(num, sent)
+                text += _["broad_7"].format(num, sent)
 
-        await aw.edit_text(text)
+            await aw.edit_text(text)
 
     IS_BROADCASTING = False
 
