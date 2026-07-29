@@ -9,7 +9,73 @@ from SONALI_MUSIC.core.mongo import mongodb
 
 from .logging import LOGGER
 
-SUDOERS = filters.user()
+from pyrogram.filters import Filter
+
+class DynamicSudoersFilter(Filter):
+    def __init__(self):
+        super().__init__()
+        self.users = set()
+
+    def add(self, user_id):
+        self.users.add(user_id)
+
+    def remove(self, user_id):
+        if user_id in self.users:
+            self.users.remove(user_id)
+
+    def copy(self):
+        return self.users.copy()
+
+    def __iter__(self):
+        return iter(self.users)
+
+    def __len__(self):
+        return len(self.users)
+
+    def __contains__(self, user_id):
+        return user_id in self.users
+
+    async def __call__(self, _, update):
+        user = update.from_user if hasattr(update, "from_user") else None
+        user_id = user.id if user else None
+        if not user_id:
+            return False
+
+        # Check if we are running in a cloned bot context
+        try:
+            from SONALI_MUSIC.core.clone_manager import current_clone_client
+            clone = current_clone_client.get()
+            if clone is not None:
+                bot_id = clone.me.id
+                from SONALI_MUSIC.utils.database_clone import get_clone_by_id
+                clone_db = await get_clone_by_id(bot_id)
+                if clone_db:
+                    tenant_id = clone_db.get("tenant_id")
+                    if user_id == tenant_id:
+                        return True
+        except Exception:
+            pass
+
+        # Check main bot owner
+        import config
+        if user_id == config.OWNER_ID:
+            return True
+
+        # Check supreme admins
+        try:
+            from SONALI_MUSIC.utils.database_clone import is_supreme_admin
+            if await is_supreme_admin(user_id):
+                return True
+        except Exception:
+            pass
+
+        # Main bot sudoers
+        if user_id in self.users:
+            return True
+
+        return False
+
+SUDOERS = DynamicSudoersFilter()
 
 HAPP = None
 _boot_ = time.time()

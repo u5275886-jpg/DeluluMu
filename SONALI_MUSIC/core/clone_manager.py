@@ -60,11 +60,17 @@ class CloneManager:
         # Patch core Pyrogram async methods to delegate contextually
         methods_to_patch = [
             "send_message", "send_photo", "send_audio", "send_video",
-            "send_animation", "send_document", "edit_message_text",
-            "edit_message_caption", "edit_message_reply_markup",
-            "delete_messages", "leave_chat", "get_chat", "get_chat_member",
+            "send_animation", "send_document", "send_sticker", "send_dice",
+            "send_chat_action", "edit_message_text", "edit_message_caption",
+            "edit_message_reply_markup", "delete_messages", "copy_message",
+            "leave_chat", "get_chat", "get_chat_member", "get_chat_members",
+            "get_chat_history", "ban_chat_member", "unban_chat_member",
+            "restrict_chat_member", "promote_chat_member", "set_chat_title",
+            "set_chat_description", "set_chat_photo", "delete_chat_photo",
+            "pin_chat_message", "unpin_chat_message", "unpin_all_chat_messages",
             "get_me", "get_users", "export_chat_invite_link",
-            "approve_chat_join_request", "add_chat_members", "resolve_peer"
+            "approve_chat_join_request", "add_chat_members", "resolve_peer",
+            "answer_callback_query", "answer_inline_query"
         ]
 
         for method_name in methods_to_patch:
