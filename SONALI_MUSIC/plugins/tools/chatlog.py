@@ -47,9 +47,12 @@ async def join_watcher(_, message):
                 f"◎ ᴀᴅᴅᴇᴅ ʙʏ ▸ {message.from_user.mention}\n"
     f"⦿───────────────────⦿"
             )
-            await app.send_photo(LOG_GROUP_ID, photo=random.choice(photo), caption=msg, reply_markup=InlineKeyboardMarkup([
-            [InlineKeyboardButton(f"#𝗚𝗥𝗢𝗨𝗣 #𝗟𝗜𝗡𝗞", url=f"{link}")]
-         ]))
+            from SONALI_MUSIC.utils.database import get_log_group_id
+            log_group_id = await get_log_group_id()
+            if log_group_id:
+                await app.send_photo(log_group_id, photo=random.choice(photo), caption=msg, reply_markup=InlineKeyboardMarkup([
+                [InlineKeyboardButton(f"#𝗚𝗥𝗢𝗨𝗣 #𝗟𝗜𝗡𝗞", url=f"{link}")]
+             ]))
 
 
 
@@ -61,4 +64,7 @@ async def on_left_chat_member(_, message: Message):
         username = f"@{message.chat.username}" if message.chat.username else "𝐏ʀɪᴠᴀᴛᴇ 𝐂ʜᴀᴛ"
         chat_id = message.chat.id
         left = f"✫ <b><u>#𝗟𝗘𝗙𝗧_𝗚𝗥𝗢𝗨𝗣</u></b> ✫\n\nᴄʜᴀᴛ ᴛɪᴛʟᴇ : {title}\n\nᴄʜᴀᴛ ɪᴅ : {chat_id}\n\nʀᴇᴍᴏᴠᴇᴅ ʙʏ : {remove_by}\n\nʙᴏᴛ : @{app.username}"
-        await app.send_photo(LOG_GROUP_ID, photo=random.choice(photo), caption=left)
+        from SONALI_MUSIC.utils.database import get_log_group_id
+        log_group_id = await get_log_group_id()
+        if log_group_id:
+            await app.send_photo(log_group_id, photo=random.choice(photo), caption=left)

@@ -1,7 +1,7 @@
 from pyrogram.enums import ParseMode
 
 from SONALI_MUSIC import app
-from SONALI_MUSIC.utils.database import is_on_off
+from SONALI_MUSIC.utils.database import is_on_off, get_log_group_id
 from config import LOGGER_ID
 
 
@@ -20,10 +20,11 @@ async def play_logs(message, streamtype):
 
 <b>● ǫᴜᴇʀʏ ➠</b> {message.text.split(None, 1)[1]}
 <b>● sᴛʀᴇᴀᴍᴛʏᴘᴇ ➠</b> {streamtype}"""
-        if message.chat.id != LOGGER_ID:
+        log_group_id = await get_log_group_id()
+        if log_group_id and message.chat.id != log_group_id:
             try:
                 await app.send_message(
-                    chat_id=LOGGER_ID,
+                    chat_id=log_group_id,
                     text=logger_text,
                     parse_mode=ParseMode.HTML,
                     disable_web_page_preview=True,

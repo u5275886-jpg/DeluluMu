@@ -248,6 +248,14 @@ async def update_clone_assistant_settings(bot_id: int, mode: str, assistant_id: 
     )
     return True
 
+async def update_clone_log_group(bot_id: int, log_group_id: Optional[int]) -> bool:
+    """Updates a cloned bot's log group ID."""
+    await cloned_db.update_one(
+        {"bot_id": bot_id},
+        {"$set": {"log_group_id": log_group_id}}
+    )
+    return True
+
 # ----------------------------------------------------------------------
 # 5. FORCE SUBSCRIBE & HELP TEXT CUSTOMIZATIONS
 # ----------------------------------------------------------------------
