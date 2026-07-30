@@ -94,12 +94,27 @@ def PlayWrapper(command):
         playty = await get_playtype(message.chat.id)
         if playty != "Everyone":
             if message.from_user.id not in SUDOERS:
-                admins = adminlist.get(message.chat.id)
-                if not admins:
-                    return await message.reply_text(_["admin_13"])
-                else:
-                    if message.from_user.id not in admins:
-                        return await message.reply_text(_["play_4"])
+                is_admin_or_owner = False
+                if message.from_user and message.from_user.id:
+                    try:
+                        from pyrogram.enums import ChatMemberStatus
+                        member = await client.get_chat_member(message.chat.id, message.from_user.id)
+                        if member.status == ChatMemberStatus.OWNER or (member.privileges and member.privileges.can_manage_video_chats):
+                            is_admin_or_owner = True
+                            if message.chat.id not in adminlist:
+                                adminlist[message.chat.id] = []
+                            if message.from_user.id not in adminlist[message.chat.id]:
+                                adminlist[message.chat.id].append(message.from_user.id)
+                    except Exception:
+                        pass
+
+                if not is_admin_or_owner:
+                    admins = adminlist.get(message.chat.id)
+                    if not admins:
+                        return await message.reply_text(_["admin_13"])
+                    else:
+                        if message.from_user.id not in admins:
+                            return await message.reply_text(_["play_4"])
         if message.command[0][0] == "v":
             video = True
         else:

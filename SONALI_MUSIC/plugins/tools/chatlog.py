@@ -24,41 +24,69 @@ from pyrogram.enums import ParseMode
 photo = [
     "https://files.catbox.moe/tdj8he.jpg",
     "https://files.catbox.moe/ygpszq.jpg",
-    
 ]  
 
 
 @app.on_message(filters.new_chat_members, group=2)
 async def join_watcher(_, message):    
     chat = message.chat
-    link = await app.export_chat_invite_link(message.chat.id)
-    for members in message.new_chat_members:
-        if members.id == app.id:
-            count = await app.get_chat_members_count(chat.id)
 
-            msg = (
-                f"#𝗕𝗢𝗧_𝗔𝗗𝗗𝗘𝗗_𝗡𝗘𝗪_𝗚𝗥𝗢𝗨𝗣\n\n"
-                f"⦿───────────────────⦿\n\n"
-                f"◎ ᴄʜᴀᴛ ɴᴀᴍᴇ ▸ {message.chat.title}\n"
-                f"◎ ᴄʜᴀᴛ ɪᴅ ▸ {message.chat.id}\n"
-                f"◎ ᴄʜᴀᴛ ᴜsᴇʀɴᴀᴍᴇ ▸ @{message.chat.username}\n"
-                f"◎ ᴄʜᴀᴛ ʟɪɴᴋ ▸ [ᴄʟɪᴄᴋ]({link})\n"
-                f"◎ ɢʀᴏᴜᴘ ᴍᴇᴍʙᴇʀs ▸ {count}\n"
-                f"◎ ᴀᴅᴅᴇᴅ ʙʏ ▸ {message.from_user.mention}\n"
-    f"⦿───────────────────⦿"
+    # Check if the bot itself was added
+    is_bot_added = False
+    for member in message.new_chat_members:
+        if member.id == app.id:
+            is_bot_added = True
+            break
+
+    if not is_bot_added:
+        return
+
+    # Now that we know the bot itself was added, get the invite link robustly
+    try:
+        link = await app.export_chat_invite_link(message.chat.id)
+    except Exception:
+        link = "No Link (Need Admin Rights)"
+
+    try:
+        count = await app.get_chat_members_count(chat.id)
+    except Exception:
+        count = "Unknown"
+
+    added_by = message.from_user.mention if message.from_user else "Unknown User"
+    msg = (
+        f"#𝗕𝗢𝗧_𝗔𝗗𝗗𝗘𝗗_𝗡𝗘𝗪_𝗚𝗥𝗢𝗨𝗣\n\n"
+        f"⦿───────────────────⦿\n\n"
+        f"◎ ᴄʜᴀᴛ ɴᴀᴍᴇ ▸ {message.chat.title}\n"
+        f"◎ ᴄʜᴀᴛ ɪᴅ ▸ {message.chat.id}\n"
+        f"◎ ᴄʜᴀᴛ ᴜsᴇʀɴᴀᴍᴇ ▸ @{message.chat.username if message.chat.username else 'Private Group'}\n"
+        f"◎ ᴄʜᴀᴛ ʟɪɴᴋ ▸ {link if link.startswith('http') else '[No Link]'}\n"
+        f"◎ ɢʀᴏᴜᴘ ᴍᴇᴍʙᴇʀs ▸ {count}\n"
+        f"◎ ᴀᴅᴅᴇᴅ ʙʏ ▸ {added_by}\n"
+        f"⦿───────────────────⦿"
+    )
+
+    from SONALI_MUSIC.utils.database import get_log_group_id
+    log_group_id = await get_log_group_id()
+    if log_group_id:
+        reply_markup = None
+        if link.startswith("http"):
+            reply_markup = InlineKeyboardMarkup([
+                [InlineKeyboardButton(f"#𝗚𝗥𝗢𝗨𝗣 #𝗟𝗜𝗡𝗞", url=link)]
+            ])
+        try:
+            await app.send_photo(
+                log_group_id,
+                photo=random.choice(photo),
+                caption=msg,
+                reply_markup=reply_markup
             )
-            from SONALI_MUSIC.utils.database import get_log_group_id
-            log_group_id = await get_log_group_id()
-            if log_group_id:
-                await app.send_photo(log_group_id, photo=random.choice(photo), caption=msg, reply_markup=InlineKeyboardMarkup([
-                [InlineKeyboardButton(f"#𝗚𝗥𝗢𝗨𝗣 #𝗟𝗜𝗡𝗞", url=f"{link}")]
-             ]))
-
+        except Exception as e:
+            print(f"Error sending group add log: {e}")
 
 
 @app.on_message(filters.left_chat_member)
 async def on_left_chat_member(_, message: Message):
-    if (await app.get_me()).id == message.left_chat_member.id:
+    if message.left_chat_member.id == app.id:
         remove_by = message.from_user.mention if message.from_user else "𝐔ɴᴋɴᴏᴡɴ 𝐔sᴇʀ"
         title = message.chat.title
         username = f"@{message.chat.username}" if message.chat.username else "𝐏ʀɪᴠᴀᴛᴇ 𝐂ʜᴀᴛ"
@@ -67,4 +95,7 @@ async def on_left_chat_member(_, message: Message):
         from SONALI_MUSIC.utils.database import get_log_group_id
         log_group_id = await get_log_group_id()
         if log_group_id:
-            await app.send_photo(log_group_id, photo=random.choice(photo), caption=left)
+            try:
+                await app.send_photo(log_group_id, photo=random.choice(photo), caption=left)
+            except Exception as e:
+                print(f"Error sending group left log: {e}")
