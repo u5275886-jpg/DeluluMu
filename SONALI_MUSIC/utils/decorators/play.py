@@ -52,11 +52,6 @@ def PlayWrapper(command):
                     disable_web_page_preview=True,
                 )
 
-        try:
-            await message.delete()
-        except:
-            pass
-
         audio_telegram = (
             (message.reply_to_message.audio or message.reply_to_message.voice)
             if message.reply_to_message
@@ -211,7 +206,7 @@ def PlayWrapper(command):
                 except:
                     pass
 
-        return await command(
+        res = await command(
             client,
             message,
             _,
@@ -222,5 +217,10 @@ def PlayWrapper(command):
             url,
             fplay,
         )
+        try:
+            await message.delete()
+        except:
+            pass
+        return res
 
     return wrapper

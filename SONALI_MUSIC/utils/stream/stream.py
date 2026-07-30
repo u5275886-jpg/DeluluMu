@@ -77,7 +77,11 @@ async def stream(
                     file_path, direct = await YouTube.download(
                         vidid, mystic, video=status, videoid=True
                     )
-                except:
+                    if not file_path:
+                        raise AssistantErr(_["play_14"])
+                except Exception as e:
+                    if isinstance(e, AssistantErr):
+                        raise
                     raise AssistantErr(_["play_14"])
                 await Sona.join_call(
                     chat_id,
@@ -159,7 +163,11 @@ async def stream(
             file_path, direct = await YouTube.download(
                 vidid, mystic, videoid=True, video=status
             )
-        except:
+            if not file_path:
+                raise AssistantErr(_["play_14"])
+        except Exception as e:
+            if isinstance(e, AssistantErr):
+                raise
             raise AssistantErr(_["play_14"])
         if await is_active_chat(chat_id):
             await put_queue(
