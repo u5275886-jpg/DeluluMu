@@ -165,8 +165,9 @@ async def get_assistant(chat_id: int) -> str:
         bot_id = clone.me.id
         clone_db = await get_clone_by_id(bot_id)
         if clone_db:
+            assistant_mode = clone_db.get('assistant_mode', 'system')
             custom_session = clone_db.get('custom_session')
-            if custom_session:
+            if assistant_mode == "custom" and custom_session and custom_session.strip():
                 if hasattr(Sona, 'custom_assistants') and bot_id in Sona.custom_assistants:
                     return Sona.custom_assistants[bot_id]['userbot']
                 else:
@@ -201,8 +202,9 @@ async def group_assistant(self, chat_id: int) -> int:
         bot_id = clone.me.id
         clone_db = await get_clone_by_id(bot_id)
         if clone_db:
+            assistant_mode = clone_db.get('assistant_mode', 'system')
             custom_session = clone_db.get('custom_session')
-            if custom_session:
+            if assistant_mode == "custom" and custom_session and custom_session.strip():
                 if hasattr(self, 'custom_assistants') and bot_id in self.custom_assistants:
                     return self.custom_assistants[bot_id]['pytgcalls']
                 else:
