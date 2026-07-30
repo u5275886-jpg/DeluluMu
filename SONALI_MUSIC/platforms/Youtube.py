@@ -20,16 +20,73 @@ def time_to_seconds(time):
     return sum(int(x) * 60 ** i for i, x in enumerate(reversed(stringt.split(":"))))
 
 
+def find_downloaded_file(video_id: str) -> str:
+    if os.path.exists(DOWNLOAD_DIR):
+        for f in os.listdir(DOWNLOAD_DIR):
+            if f.startswith(video_id) and os.path.getsize(os.path.join(DOWNLOAD_DIR, f)) > 0:
+                return os.path.join(DOWNLOAD_DIR, f)
+    return None
+
+
+def download_song_ytdlp(video_id: str) -> str:
+    try:
+        import yt_dlp
+        ydl_opts = {
+            "format": "bestaudio/best",
+            "outtmpl": os.path.join(DOWNLOAD_DIR, f"{video_id}.%(ext)s"),
+            "geo_bypass": True,
+            "nocheckcertificate": True,
+            "quiet": True,
+            "no_warnings": True,
+        }
+        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+            info = ydl.extract_info(f"https://www.youtube.com/watch?v={video_id}", download=True)
+            filename = ydl.prepare_filename(info)
+            if os.path.exists(filename):
+                return filename
+            found = find_downloaded_file(video_id)
+            if found:
+                return found
+    except Exception as e:
+        print(f"yt-dlp fallback download failed for song {video_id}: {e}")
+    return None
+
+
+def download_video_ytdlp(video_id: str) -> str:
+    try:
+        import yt_dlp
+        ydl_opts = {
+            "format": "bestvideo[height<=720]+bestaudio/best[height<=720]/best",
+            "outtmpl": os.path.join(DOWNLOAD_DIR, f"{video_id}.%(ext)s"),
+            "geo_bypass": True,
+            "nocheckcertificate": True,
+            "quiet": True,
+            "no_warnings": True,
+        }
+        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+            info = ydl.extract_info(f"https://www.youtube.com/watch?v={video_id}", download=True)
+            filename = ydl.prepare_filename(info)
+            if os.path.exists(filename):
+                return filename
+            found = find_downloaded_file(video_id)
+            if found:
+                return found
+    except Exception as e:
+        print(f"yt-dlp fallback download failed for video {video_id}: {e}")
+    return None
+
+
 async def download_song(link: str) -> str:
     video_id = link.split("v=")[-1].split("&")[0] if "v=" in link else link
     if not video_id or len(video_id) < 3:
         return None
 
     os.makedirs(DOWNLOAD_DIR, exist_ok=True)
-    file_path = os.path.join(DOWNLOAD_DIR, f"{video_id}.mp3")
-    if os.path.exists(file_path) and os.path.getsize(file_path) > 0:
-        return file_path
+    found = find_downloaded_file(video_id)
+    if found:
+        return found
 
+    file_path = os.path.join(DOWNLOAD_DIR, f"{video_id}.mp3")
     try:
         async with aiohttp.ClientSession() as session:
             async with session.get(
@@ -37,21 +94,22 @@ async def download_song(link: str) -> str:
                 params={"url": video_id, "type": "audio", "api_key": API_KEY},
                 timeout=aiohttp.ClientTimeout(total=300)
             ) as resp:
-                if resp.status != 200:
-                    return None
-                with open(file_path, "wb") as f:
-                    async for chunk in resp.content.iter_chunked(131072):
-                        f.write(chunk)
-        if os.path.exists(file_path) and os.path.getsize(file_path) > 0:
-            return file_path
-        return None
+                if resp.status == 200:
+                    with open(file_path, "wb") as f:
+                        async for chunk in resp.content.iter_chunked(131072):
+                            f.write(chunk)
+                    if os.path.exists(file_path) and os.path.getsize(file_path) > 0:
+                        return file_path
     except Exception:
         if os.path.exists(file_path):
             try:
                 os.remove(file_path)
             except Exception:
                 pass
-        return None
+
+    # Fallback to yt-dlp
+    loop = asyncio.get_event_loop()
+    return await loop.run_in_executor(None, download_song_ytdlp, video_id)
 
 
 async def download_video(link: str) -> str:
@@ -60,10 +118,11 @@ async def download_video(link: str) -> str:
         return None
 
     os.makedirs(DOWNLOAD_DIR, exist_ok=True)
-    file_path = os.path.join(DOWNLOAD_DIR, f"{video_id}.mp4")
-    if os.path.exists(file_path) and os.path.getsize(file_path) > 0:
-        return file_path
+    found = find_downloaded_file(video_id)
+    if found:
+        return found
 
+    file_path = os.path.join(DOWNLOAD_DIR, f"{video_id}.mp4")
     try:
         async with aiohttp.ClientSession() as session:
             async with session.get(
@@ -71,21 +130,22 @@ async def download_video(link: str) -> str:
                 params={"url": video_id, "type": "video", "api_key": API_KEY},
                 timeout=aiohttp.ClientTimeout(total=600)
             ) as resp:
-                if resp.status != 200:
-                    return None
-                with open(file_path, "wb") as f:
-                    async for chunk in resp.content.iter_chunked(131072):
-                        f.write(chunk)
-        if os.path.exists(file_path) and os.path.getsize(file_path) > 0:
-            return file_path
-        return None
+                if resp.status == 200:
+                    with open(file_path, "wb") as f:
+                        async for chunk in resp.content.iter_chunked(131072):
+                            f.write(chunk)
+                    if os.path.exists(file_path) and os.path.getsize(file_path) > 0:
+                        return file_path
     except Exception:
         if os.path.exists(file_path):
             try:
                 os.remove(file_path)
             except Exception:
                 pass
-        return None
+
+    # Fallback to yt-dlp
+    loop = asyncio.get_event_loop()
+    return await loop.run_in_executor(None, download_video_ytdlp, video_id)
 
 
 class YouTubeAPI:
