@@ -1,4 +1,4 @@
-from pyrogram.enums import ChatType
+from pyrogram.enums import ChatType, ChatMemberStatus
 from pyrogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 
 from SONALI_MUSIC import app
@@ -68,7 +68,6 @@ def AdminRightsCheck(mystic):
                 is_admin_or_owner = False
                 if message.from_user and message.from_user.id:
                     try:
-                        from pyrogram.enums import ChatMemberStatus
                         member = await client.get_chat_member(chat_id, message.from_user.id)
                         if member.status == ChatMemberStatus.OWNER or (member.privileges and member.privileges.can_manage_video_chats):
                             is_admin_or_owner = True
@@ -163,7 +162,6 @@ def AdminActual(mystic):
             return await message.reply_text(_["general_3"], reply_markup=upl)
         if message.from_user.id not in SUDOERS:
             try:
-                from pyrogram.enums import ChatMemberStatus
                 member = await app.get_chat_member(message.chat.id, message.from_user.id)
                 if member.status != ChatMemberStatus.OWNER:
                     if not member.privileges or not member.privileges.can_manage_video_chats:
@@ -193,7 +191,6 @@ def ActualAdminCB(mystic):
         is_non_admin = await is_nonadmin_chat(CallbackQuery.message.chat.id)
         if not is_non_admin:
             try:
-                from pyrogram.enums import ChatMemberStatus
                 member = await app.get_chat_member(
                     CallbackQuery.message.chat.id,
                     CallbackQuery.from_user.id,

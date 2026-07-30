@@ -92,7 +92,6 @@ def PlayWrapper(command):
                 is_admin_or_owner = False
                 if message.from_user and message.from_user.id:
                     try:
-                        from pyrogram.enums import ChatMemberStatus
                         member = await client.get_chat_member(message.chat.id, message.from_user.id)
                         if member.status == ChatMemberStatus.OWNER or (member.privileges and member.privileges.can_manage_video_chats):
                             is_admin_or_owner = True
