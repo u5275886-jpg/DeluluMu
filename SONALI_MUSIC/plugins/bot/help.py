@@ -1,5 +1,5 @@
 from typing import Union
-from pyrogram import filters, types
+from pyrogram import filters, types, enums
 from pyrogram.types import InlineKeyboardMarkup, Message, InlineKeyboardButton
 from SONALI_MUSIC import app
 from SONALI_MUSIC.utils import help_pannel
@@ -74,7 +74,14 @@ async def helper_cb(client, CallbackQuery, _):
     cb = callback_data.split(None, 1)[1]
     keyboard = help_back_markup(_)
 
-    default_val = getattr(helpers, cb.upper(), "")
+    if cb.startswith("hb"):
+        try:
+            num = int(cb[2:])
+            default_val = getattr(helpers, f"HELP_{num}", "")
+        except ValueError:
+            default_val = getattr(helpers, cb.upper(), "")
+    else:
+        default_val = getattr(helpers, cb.upper(), "")
     from SONALI_MUSIC.utils.database_clone import get_custom_help_text
     help_text = await get_custom_help_text(client.me.id, cb.lower(), default_val)
     await CallbackQuery.edit_message_text(help_text, reply_markup=keyboard)

@@ -123,17 +123,17 @@ class BUTTONS(object):
     SBUTTON = [
         [
             InlineKeyboardButton("⌯ ϻᴜѕɪᴄ ⌯", callback_data="settings_back_helper"),
-            InlineKeyboardButton("⌯ ϻᴧηᴧɢєϻєηᴛ ⌯", callback_data="TOOL_CP"),
+            InlineKeyboardButton("⌯ ϻᴧηᴧɢєϻєηᴛ ⌯", callback_data="MANAGEMENT_CP"),
         ],
         [
-            InlineKeyboardButton("ᴧʟʟ ʙσᴛ's", callback_data="MAIN_BACK HELP_ABOUT"),
+            InlineKeyboardButton("⌯ ᴛσσʟs ⌯", callback_data="TOOL_CP"),
             InlineKeyboardButton("⌯ ᴘʀσϻσᴛɪση ⌯", callback_data="PROMOTION_CP"),
         ],
         [
+            InlineKeyboardButton("ᴧʟʟ ʙσᴛ's", callback_data="MAIN_BACK HELP_ABOUT"),
             InlineKeyboardButton("⌯ ʙᴧᴄᴋ ᴛσ ʜσϻє ⌯", callback_data="settingsback_helper"),
-            
         ]
-        ]
+    ]
 
 
 
