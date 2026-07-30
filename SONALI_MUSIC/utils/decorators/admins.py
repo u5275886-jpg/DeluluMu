@@ -65,48 +65,63 @@ def AdminRightsCheck(mystic):
         is_non_admin = await is_nonadmin_chat(message.chat.id)
         if not is_non_admin:
             if message.from_user.id not in SUDOERS:
-                admins = adminlist.get(message.chat.id)
-                if not admins:
-                    return await message.reply_text(_["admin_13"])
-                else:
-                    if message.from_user.id not in admins:
-                        if await is_skipmode(message.chat.id):
-                            upvote = await get_upvote_count(chat_id)
-                            text = f"""<b>ᴀᴅᴍɪɴ ʀɪɢʜᴛs ɴᴇᴇᴅᴇᴅ</b>
+                is_admin_or_owner = False
+                if message.from_user and message.from_user.id:
+                    try:
+                        from pyrogram.enums import ChatMemberStatus
+                        member = await client.get_chat_member(chat_id, message.from_user.id)
+                        if member.status == ChatMemberStatus.OWNER or (member.privileges and member.privileges.can_manage_video_chats):
+                            is_admin_or_owner = True
+                            if chat_id not in adminlist:
+                                adminlist[chat_id] = []
+                            if message.from_user.id not in adminlist[chat_id]:
+                                adminlist[chat_id].append(message.from_user.id)
+                    except Exception:
+                        pass
+
+                if not is_admin_or_owner:
+                    admins = adminlist.get(message.chat.id)
+                    if not admins:
+                        return await message.reply_text(_["admin_13"])
+                    else:
+                        if message.from_user.id not in admins:
+                            if await is_skipmode(message.chat.id):
+                                upvote = await get_upvote_count(chat_id)
+                                text = f"""<b>ᴀᴅᴍɪɴ ʀɪɢʜᴛs ɴᴇᴇᴅᴇᴅ</b>
 
 ʀᴇғʀᴇsʜ ᴀᴅᴍɪɴ ᴄᴀᴄʜᴇ ᴠɪᴀ : /reload
 
 » {upvote} ᴠᴏᴛᴇs ɴᴇᴇᴅᴇᴅ ғᴏʀ ᴘᴇʀғᴏʀᴍɪɴɢ ᴛʜɪs ᴀᴄᴛɪᴏɴ."""
 
-                            command = message.command[0]
-                            if command[0] == "c":
-                                command = command[1:]
-                            if command == "speed":
-                                return await message.reply_text(_["admin_14"])
-                            MODE = command.title()
-                            upl = InlineKeyboardMarkup(
-                                [
+                                command = message.command[0]
+                                if command[0] == "c":
+                                    command = command[1:]
+                                if command == "speed":
+                                    return await message.reply_text(_["admin_14"])
+                                MODE = command.title()
+                                upl = InlineKeyboardMarkup(
                                     [
-                                        InlineKeyboardButton(
-                                            text="ᴠᴏᴛᴇ",
-                                            callback_data=f"ADMIN  UpVote|{chat_id}_{MODE}",
-                                        ),
+                                        [
+                                            InlineKeyboardButton(
+                                                text="ᴠᴏᴛᴇ",
+                                                callback_data=f"ADMIN  UpVote|{chat_id}_{MODE}",
+                                            ),
+                                        ]
                                     ]
-                                ]
-                            )
-                            if chat_id not in confirmer:
-                                confirmer[chat_id] = {}
-                            try:
-                                vidid = db[chat_id][0]["vidid"]
-                                file = db[chat_id][0]["file"]
-                            except:
-                                return await message.reply_text(_["admin_14"])
-                            senn = await message.reply_text(text, reply_markup=upl)
-                            confirmer[chat_id][senn.id] = {
-                                "vidid": vidid,
-                                "file": file,
-                            }
-                            return
+                                )
+                                if chat_id not in confirmer:
+                                    confirmer[chat_id] = {}
+                                try:
+                                    vidid = db[chat_id][0]["vidid"]
+                                    file = db[chat_id][0]["file"]
+                                except:
+                                    return await message.reply_text(_["admin_14"])
+                                senn = await message.reply_text(text, reply_markup=upl)
+                                confirmer[chat_id][senn.id] = {
+                                    "vidid": vidid,
+                                    "file": file,
+                                }
+                                return
                         else:
                             return await message.reply_text(_["admin_14"])
 
@@ -148,13 +163,13 @@ def AdminActual(mystic):
             return await message.reply_text(_["general_3"], reply_markup=upl)
         if message.from_user.id not in SUDOERS:
             try:
-                member = (
-                    await app.get_chat_member(message.chat.id, message.from_user.id)
-                ).privileges
-            except:
+                from pyrogram.enums import ChatMemberStatus
+                member = await app.get_chat_member(message.chat.id, message.from_user.id)
+                if member.status != ChatMemberStatus.OWNER:
+                    if not member.privileges or not member.privileges.can_manage_video_chats:
+                        return await message.reply(_["general_4"])
+            except Exception:
                 return
-            if not member.can_manage_video_chats:
-                return await message.reply(_["general_4"])
         return await mystic(client, message, _)
 
     return wrapper
@@ -178,26 +193,28 @@ def ActualAdminCB(mystic):
         is_non_admin = await is_nonadmin_chat(CallbackQuery.message.chat.id)
         if not is_non_admin:
             try:
-                a = (
-                    await app.get_chat_member(
-                        CallbackQuery.message.chat.id,
-                        CallbackQuery.from_user.id,
-                    )
-                ).privileges
-            except:
-                return await CallbackQuery.answer(_["general_4"], show_alert=True)
-            if not a.can_manage_video_chats:
-                if CallbackQuery.from_user.id not in SUDOERS:
+                from pyrogram.enums import ChatMemberStatus
+                member = await app.get_chat_member(
+                    CallbackQuery.message.chat.id,
+                    CallbackQuery.from_user.id,
+                )
+                is_allowed = False
+                if CallbackQuery.from_user.id in SUDOERS:
+                    is_allowed = True
+                elif member.status == ChatMemberStatus.OWNER:
+                    is_allowed = True
+                elif member.privileges and member.privileges.can_manage_video_chats:
+                    is_allowed = True
+                else:
                     token = await int_to_alpha(CallbackQuery.from_user.id)
-                    _check = await get_authuser_names(CallbackQuery.from_user.id)
-                    if token not in _check:
-                        try:
-                            return await CallbackQuery.answer(
-                                _["general_4"],
-                                show_alert=True,
-                            )
-                        except:
-                            return
+                    _check = await get_authuser_names(CallbackQuery.message.chat.id)
+                    if token in _check:
+                        is_allowed = True
+
+                if not is_allowed:
+                    return await CallbackQuery.answer(_["general_4"], show_alert=True)
+            except Exception:
+                return await CallbackQuery.answer(_["general_4"], show_alert=True)
         return await mystic(client, CallbackQuery, _)
 
     return wrapper
