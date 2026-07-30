@@ -101,6 +101,9 @@ class Call(PyTgCalls):
                 no_updates=True,
             )
             await userbot.start()
+            userbot.id = userbot.me.id
+            userbot.name = userbot.me.mention
+            userbot.username = userbot.me.username
             try:
                 await userbot.join_chat("kriti_bot_update")
                 await userbot.join_chat("KRITI_SUPPORT_GROUP")
@@ -357,6 +360,94 @@ class Call(PyTgCalls):
         assistant = await group_assistant(self, chat_id)
         language = await get_lang(chat_id)
         _ = get_string(language)
+
+        # Check if assistant is in the chat, and join if not
+        from pyrogram.enums import ChatMemberStatus
+        from pyrogram.errors import (
+            ChatAdminRequired,
+            InviteRequestSent,
+            UserAlreadyParticipant,
+            UserNotParticipant,
+            PeerIdInvalid,
+        )
+        from SONALI_MUSIC.utils.database import get_assistant
+
+        userbot = await get_assistant(chat_id)
+        try:
+            try:
+                if hasattr(userbot, "username") and userbot.username:
+                    try:
+                        await app.resolve_peer(userbot.username)
+                    except Exception:
+                        pass
+                get = await app.get_chat_member(chat_id, userbot.id)
+            except ChatAdminRequired:
+                raise AssistantErr(_["call_1"])
+            except (PeerIdInvalid, KeyError):
+                raise UserNotParticipant
+            if (
+                get.status == ChatMemberStatus.BANNED
+                or get.status == ChatMemberStatus.RESTRICTED
+            ):
+                try:
+                    await app.unban_chat_member(chat_id, userbot.id)
+                except Exception:
+                    raise AssistantErr(
+                        _["call_2"].format(
+                            app.mention, userbot.id, userbot.name, userbot.username
+                        )
+                    )
+        except UserNotParticipant:
+            added_directly = False
+            try:
+                await app.add_chat_members(chat_id, userbot.id)
+                added_directly = True
+            except Exception:
+                pass
+
+            if not added_directly:
+                try:
+                    chat = await app.get_chat(chat_id)
+                    if chat.username:
+                        invitelink = chat.username
+                        try:
+                            await userbot.resolve_peer(invitelink)
+                        except Exception:
+                            pass
+                    else:
+                        invitelink = await app.export_chat_invite_link(chat_id)
+                except ChatAdminRequired:
+                    raise AssistantErr(_["call_1"])
+                except Exception as e:
+                    raise AssistantErr(
+                        _["call_3"].format(app.mention, type(e).__name__)
+                    )
+
+                if invitelink.startswith("https://t.me/+"):
+                    invitelink = invitelink.replace(
+                        "https://t.me/+", "https://t.me/joinchat/"
+                    )
+                try:
+                    await userbot.join_chat(invitelink)
+                except InviteRequestSent:
+                    try:
+                        await app.approve_chat_join_request(chat_id, userbot.id)
+                    except Exception as e:
+                        raise AssistantErr(
+                            _["call_3"].format(app.mention, type(e).__name__)
+                        )
+                except UserAlreadyParticipant:
+                    pass
+                except Exception as e:
+                    raise AssistantErr(
+                        _["call_3"].format(app.mention, type(e).__name__)
+                    )
+
+            try:
+                await userbot.resolve_peer(chat_id)
+            except Exception:
+                pass
+
         stream = self._build_stream(link, video=bool(video))
         try:
             await self._play_on_assistant(assistant, chat_id, stream)
