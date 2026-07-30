@@ -38,15 +38,15 @@ async def init():
         importlib.import_module("SONALI_MUSIC.plugins" + all_module)
     LOGGER("SONALI_MUSIC.plugins").info("𝐀𝐥𝐥 𝐅𝐞𝐚𝐭𝐮𝐫𝐞𝐬 𝐋𝐨𝐚𝐝𝐞𝐝 𝐁𝐚𝐛𝐲🥳...")
 
+    await userbot.start()
+    await Sona.start()
+
     # Start Cloned Bots dynamically
     from SONALI_MUSIC.core.clone_manager import clone_manager
     try:
         await clone_manager.start_all_clones()
     except Exception as e:
         LOGGER("SONALI_MUSIC").error(f"Failed to load cloned bots on startup: {e}")
-
-    await userbot.start()
-    await Sona.start()
     try:
         await Sona.stream_call("https://te.legra.ph/file/29f784eb49d230ab62e9e.mp4")
     except NoActiveGroupCall:
