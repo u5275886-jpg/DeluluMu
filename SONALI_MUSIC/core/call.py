@@ -357,129 +357,180 @@ class Call(PyTgCalls):
         video: Union[bool, str] = None,
         image: Union[bool, str] = None,
     ):
-        assistant = await group_assistant(self, chat_id)
-        language = await get_lang(chat_id)
-        _ = get_string(language)
+        from SONALI_MUSIC.core.clone_manager import current_clone_client, clone_manager
+        from SONALI_MUSIC.utils.database import assistantdict
 
-        # Check if assistant is in the chat, and join if not
-        from pyrogram.enums import ChatMemberStatus
-        from pyrogram.errors import (
-            ChatAdminRequired,
-            InviteRequestSent,
-            UserAlreadyParticipant,
-            UserNotParticipant,
-            PeerIdInvalid,
-        )
-        from SONALI_MUSIC.utils.database import get_assistant
+        bot_id = None
+        check = db.get(chat_id)
+        if check and len(check) > 0:
+            bot_id = check[0].get("bot_id")
 
-        userbot = await get_assistant(chat_id)
+        if not bot_id:
+            for (b_id, c_id), assis_idx in assistantdict.items():
+                if c_id == chat_id:
+                    bot_id = b_id
+                    break
+
+        token = None
+        if bot_id:
+            clone_client = clone_manager.clones.get(bot_id)
+            if clone_client:
+                token = current_clone_client.set(clone_client)
+
         try:
-            try:
-                if hasattr(userbot, "username") and userbot.username:
-                    try:
-                        await app.resolve_peer(userbot.username)
-                    except Exception:
-                        pass
-                get = await app.get_chat_member(chat_id, userbot.id)
-            except ChatAdminRequired:
-                raise AssistantErr(_["call_1"])
-            except (PeerIdInvalid, KeyError):
-                raise UserNotParticipant
-            if (
-                get.status == ChatMemberStatus.BANNED
-                or get.status == ChatMemberStatus.RESTRICTED
-            ):
-                try:
-                    await app.unban_chat_member(chat_id, userbot.id)
-                except Exception:
-                    raise AssistantErr(
-                        _["call_2"].format(
-                            app.mention, userbot.id, userbot.name, userbot.username
-                        )
-                    )
-        except UserNotParticipant:
-            added_directly = False
-            try:
-                await app.add_chat_members(chat_id, userbot.id)
-                added_directly = True
-            except Exception:
-                pass
+            assistant = await group_assistant(self, chat_id)
+            language = await get_lang(chat_id)
+            _ = get_string(language)
 
-            if not added_directly:
+            # Check if assistant is in the chat, and join if not
+            from pyrogram.enums import ChatMemberStatus
+            from pyrogram.errors import (
+                ChatAdminRequired,
+                InviteRequestSent,
+                UserAlreadyParticipant,
+                UserNotParticipant,
+                PeerIdInvalid,
+            )
+            from SONALI_MUSIC.utils.database import get_assistant
+
+            userbot = await get_assistant(chat_id)
+            try:
                 try:
-                    chat = await app.get_chat(chat_id)
-                    if chat.username:
-                        invitelink = chat.username
+                    if hasattr(userbot, "username") and userbot.username:
                         try:
-                            await userbot.resolve_peer(invitelink)
+                            await app.resolve_peer(userbot.username)
                         except Exception:
                             pass
-                    else:
-                        invitelink = await app.export_chat_invite_link(chat_id)
+                    get = await app.get_chat_member(chat_id, userbot.id)
                 except ChatAdminRequired:
                     raise AssistantErr(_["call_1"])
-                except Exception as e:
-                    raise AssistantErr(
-                        _["call_3"].format(app.mention, type(e).__name__)
-                    )
-
-                if invitelink.startswith("https://t.me/+"):
-                    invitelink = invitelink.replace(
-                        "https://t.me/+", "https://t.me/joinchat/"
-                    )
-                try:
-                    await userbot.join_chat(invitelink)
-                except InviteRequestSent:
+                except (PeerIdInvalid, KeyError):
+                    raise UserNotParticipant
+                if (
+                    get.status == ChatMemberStatus.BANNED
+                    or get.status == ChatMemberStatus.RESTRICTED
+                ):
                     try:
-                        await app.approve_chat_join_request(chat_id, userbot.id)
+                        await app.unban_chat_member(chat_id, userbot.id)
+                    except Exception:
+                        raise AssistantErr(
+                            _["call_2"].format(
+                                app.mention, userbot.id, userbot.name, userbot.username
+                            )
+                        )
+            except UserNotParticipant:
+                added_directly = False
+                try:
+                    await app.add_chat_members(chat_id, userbot.id)
+                    added_directly = True
+                except Exception:
+                    pass
+
+                if not added_directly:
+                    try:
+                        chat = await app.get_chat(chat_id)
+                        if chat.username:
+                            invitelink = chat.username
+                            try:
+                                await userbot.resolve_peer(invitelink)
+                            except Exception:
+                                pass
+                        else:
+                            invitelink = await app.export_chat_invite_link(chat_id)
+                    except ChatAdminRequired:
+                        raise AssistantErr(_["call_1"])
                     except Exception as e:
                         raise AssistantErr(
                             _["call_3"].format(app.mention, type(e).__name__)
                         )
-                except UserAlreadyParticipant:
+
+                    if invitelink.startswith("https://t.me/+"):
+                        invitelink = invitelink.replace(
+                            "https://t.me/+", "https://t.me/joinchat/"
+                        )
+                    try:
+                        await userbot.join_chat(invitelink)
+                    except InviteRequestSent:
+                        try:
+                            await app.approve_chat_join_request(chat_id, userbot.id)
+                        except Exception as e:
+                            raise AssistantErr(
+                                _["call_3"].format(app.mention, type(e).__name__)
+                            )
+                    except UserAlreadyParticipant:
+                        pass
+                    except Exception as e:
+                        raise AssistantErr(
+                            _["call_3"].format(app.mention, type(e).__name__)
+                        )
+
+                try:
+                    await userbot.resolve_peer(chat_id)
+                except Exception:
                     pass
-                except Exception as e:
-                    raise AssistantErr(
-                        _["call_3"].format(app.mention, type(e).__name__)
-                    )
 
+            stream = self._build_stream(link, video=bool(video))
             try:
-                await userbot.resolve_peer(chat_id)
-            except Exception:
-                pass
-
-        stream = self._build_stream(link, video=bool(video))
-        try:
-            await self._play_on_assistant(assistant, chat_id, stream)
-        except exceptions.NoActiveGroupCall:
-            raise AssistantErr(_["call_8"])
-        except exceptions.NoAudioSourceFound:
-            raise AssistantErr(
-                "❖ <b>ᴀᴜᴅɪᴏ sᴏᴜʀᴄᴇ ɴᴏᴛ ғᴏᴜɴᴅ</b>\n\n"
-                "ᴛʜᴇ ᴀssɪsᴛᴀɴᴛ ᴄᴏᴜʟᴅ ɴᴏᴛ ғɪɴᴅ ᴀ ᴠᴀʟɪᴅ ᴀᴜᴅɪᴏ/ᴠɪᴅᴇᴏ sᴏᴜʀᴄᴇ ᴛᴏ sᴛʀᴇᴀᴍ. "
-                "ᴘʟᴇᴀsᴇ ᴛʀʏ ᴀɢᴀɪɴ ᴡɪᴛʜ ᴀ ᴅɪғғᴇʀᴇɴᴛ ʟɪɴᴋ ᴏʀ ʀᴇsᴛᴀʀᴛ ᴛʜᴇ ᴠɪᴅᴇᴏᴄʜᴀᴛ."
-            )
-        except (ConnectionNotFound, TelegramServerError):
-            raise AssistantErr(_["call_10"])
-        except Exception as e:
-            raise AssistantErr(
-                f"❖ <b>ᴀssɪsᴛᴀɴᴛ ᴇʀʀᴏʀ</b>\n\n"
-                f"ᴀɴ ᴇxᴄᴇᴘᴛɪᴏɴ ᴏᴄᴄᴜʀʀᴇᴅ ᴡʜɪʟᴇ ᴘʀᴏᴄᴇssɪɴɢ ʏᴏᴜʀ ʀᴇǫᴜᴇsᴛ.\n\n"
-                f"<b>Exception Type:</b> <code>{type(e).__name__}</code>\n"
-                f"<b>Error Details:</b> <code>{str(e)}</code>"
-            )
-        await add_active_chat(chat_id)
-        await music_on(chat_id)
-        if video:
-            await add_active_video_chat(chat_id)
-        if await is_autoend():
-            counter[chat_id] = {}
-            users = len(await assistant.get_participants(chat_id))
-            if users == 1:
-                autoend[chat_id] = datetime.now() + timedelta(minutes=1)
+                await self._play_on_assistant(assistant, chat_id, stream)
+            except exceptions.NoActiveGroupCall:
+                raise AssistantErr(_["call_8"])
+            except exceptions.NoAudioSourceFound:
+                raise AssistantErr(
+                    "❖ <b>ᴀᴜᴅɪᴏ sᴏᴜʀᴄᴇ ɴᴏᴛ ғᴏᴜɴᴅ</b>\n\n"
+                    "ᴛʜᴇ ᴀssɪsᴛᴀɴᴛ ᴄᴏᴜʟᴅ ɴᴏᴛ ғɪɴᴅ ᴀ ᴠᴀʟɪᴅ ᴀᴜᴅɪᴏ/ᴠɪᴅᴇᴏ sᴏᴜʀᴄᴇ ᴛᴏ sᴛʀᴇᴀᴍ. "
+                    "ᴘʟᴇᴀsᴇ ᴛʀʏ ᴀɢᴀɪɴ ᴡɪᴛʜ ᴀ ᴅɪғғᴇʀᴇɴᴛ ʟɪɴᴋ ᴏʀ ʀᴇsᴛᴀʀᴛ ᴛʜᴇ ᴠɪᴅᴇᴏᴄʜᴀᴛ."
+                )
+            except (ConnectionNotFound, TelegramServerError):
+                raise AssistantErr(_["call_10"])
+            except Exception as e:
+                raise AssistantErr(
+                    f"❖ <b>ᴀssɪsᴛᴀɴᴛ ᴇʀʀᴏʀ</b>\n\n"
+                    f"ᴀɴ ᴇxᴄᴇᴘᴛɪᴏɴ ᴏᴄᴄᴜʀʀᴇᴅ ᴡʜɪʟᴇ ᴘʀᴏᴄᴇssɪɴɢ ʏᴏᴜʀ ʀᴇǫᴜᴇsᴛ.\n\n"
+                    f"<b>Exception Type:</b> <code>{type(e).__name__}</code>\n"
+                    f"<b>Error Details:</b> <code>{str(e)}</code>"
+                )
+            await add_active_chat(chat_id)
+            await music_on(chat_id)
+            if video:
+                await add_active_video_chat(chat_id)
+            if await is_autoend():
+                counter[chat_id] = {}
+                users = len(await assistant.get_participants(chat_id))
+                if users == 1:
+                    autoend[chat_id] = datetime.now() + timedelta(minutes=1)
+        finally:
+            if token:
+                current_clone_client.reset(token)
 
     
     async def change_stream(self, client: PyTgCalls, chat_id: int):
+        from SONALI_MUSIC.core.clone_manager import current_clone_client, clone_manager
+        from SONALI_MUSIC.utils.database import assistantdict
+
+        bot_id = None
+        check = db.get(chat_id)
+        if check and len(check) > 0:
+            bot_id = check[0].get("bot_id")
+
+        if not bot_id:
+            for (b_id, c_id), assis_idx in assistantdict.items():
+                if c_id == chat_id:
+                    bot_id = b_id
+                    break
+
+        token = None
+        if bot_id:
+            clone_client = clone_manager.clones.get(bot_id)
+            if clone_client:
+                token = current_clone_client.set(clone_client)
+
+        try:
+            await self._change_stream_impl(client, chat_id)
+        finally:
+            if token:
+                current_clone_client.reset(token)
+
+    async def _change_stream_impl(self, client: PyTgCalls, chat_id: int):
         await delete_old_message(chat_id)
         check = db.get(chat_id)
         popped = None
