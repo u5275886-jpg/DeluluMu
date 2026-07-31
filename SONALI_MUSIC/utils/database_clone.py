@@ -352,3 +352,55 @@ async def get_cloned_served_users(bot_id: int) -> List[int]:
     async for user in cloned_users_db.find({"bot_id": bot_id}):
         users.append(user["user_id"])
     return users
+
+async def get_cloned_served_chats_count(bot_id: int) -> int:
+    """Returns the count of served chats for a specific cloned bot."""
+    return await cloned_chats_db.count_documents({"bot_id": bot_id})
+
+async def get_cloned_served_users_count(bot_id: int) -> int:
+    """Returns the count of served users for a specific cloned bot."""
+    return await cloned_users_db.count_documents({"bot_id": bot_id})
+
+async def get_custom_play_metadata(
+    bot_id: int,
+    title: str,
+    duration_min: str,
+    user_name: str,
+    vidid: str,
+    default_img: str,
+    default_caption: str,
+) -> tuple:
+    """
+    Returns custom play image and caption if customized for cloned bot.
+    Otherwise, returns default_img and default_caption.
+    """
+    if not bot_id:
+        return default_img, default_caption
+
+    try:
+        clone = await get_clone_by_id(bot_id)
+        if clone:
+            settings = clone.get("settings", {})
+            cust_play_img = settings.get("play_img")
+            cust_play_text = settings.get("play_text")
+
+            from SONALI_MUSIC import app
+            bot_username = app.username or "MusicBot"
+
+            play_img = cust_play_img if cust_play_img else default_img
+            play_caption = default_caption
+            if cust_play_text:
+                link = f"https://t.me/{bot_username}?start=info_{vidid}" if vidid else "https://t.me/" + bot_username
+                play_caption = (
+                    cust_play_text
+                    .replace("{title}", title)
+                    .replace("{duration}", str(duration_min))
+                    .replace("{user}", user_name)
+                    .replace("{link}", link)
+                    .replace("{bot_username}", bot_username)
+                )
+            return play_img, play_caption
+    except Exception as e:
+        import logging
+        logging.getLogger(__name__).error(f"Error in get_custom_play_metadata: {e}")
+    return default_img, default_caption

@@ -247,14 +247,19 @@ async def del_back_playlist(client, CallbackQuery, _):
                 return await CallbackQuery.message.reply_text(_["call_6"])
             button = stream_markup(_, chat_id)
             img = await get_thumb(videoid)
+            play_caption = _["stream_1"].format(
+                f"https://t.me/{app.username}?start=info_{videoid}",
+                title[:23],
+                duration,
+                user,
+            )
+            from SONALI_MUSIC.utils.database_clone import get_custom_play_metadata
+            img, play_caption = await get_custom_play_metadata(
+                app.id, title, duration, user, videoid, img, play_caption
+            )
             run = await CallbackQuery.message.reply_photo(
                 photo=img,
-                caption=_["stream_1"].format(
-                    f"https://t.me/{app.username}?start=info_{videoid}",
-                    title[:23],
-                    duration,
-                    user,
-                ),
+                caption=play_caption,
                 reply_markup=InlineKeyboardMarkup(button),
             )
             db[chat_id][0]["mystic"] = run
@@ -283,14 +288,19 @@ async def del_back_playlist(client, CallbackQuery, _):
                 return await mystic.edit_text(_["call_6"])
             button = stream_markup(_, chat_id)
             img = await get_thumb(videoid)
+            play_caption = _["stream_1"].format(
+                f"https://t.me/{app.username}?start=info_{videoid}",
+                title[:23],
+                duration,
+                user,
+            )
+            from SONALI_MUSIC.utils.database_clone import get_custom_play_metadata
+            img, play_caption = await get_custom_play_metadata(
+                app.id, title, duration, user, videoid, img, play_caption
+            )
             run = await CallbackQuery.message.reply_photo(
                 photo=img,
-                caption=_["stream_1"].format(
-                    f"https://t.me/{app.username}?start=info_{videoid}",
-                    title[:23],
-                    duration,
-                    user,
-                ),
+                caption=play_caption,
                 reply_markup=InlineKeyboardMarkup(button),
             )
             db[chat_id][0]["mystic"] = run
@@ -303,9 +313,15 @@ async def del_back_playlist(client, CallbackQuery, _):
             except:
                 return await CallbackQuery.message.reply_text(_["call_6"])
             button = stream_markup(_, chat_id)
+            play_img = STREAM_IMG_URL
+            play_caption = _["stream_2"].format(user)
+            from SONALI_MUSIC.utils.database_clone import get_custom_play_metadata
+            play_img, play_caption = await get_custom_play_metadata(
+                app.id, title, duration, user, "", play_img, play_caption
+            )
             run = await CallbackQuery.message.reply_photo(
-                photo=STREAM_IMG_URL,
-                caption=_["stream_2"].format(user),
+                photo=play_img,
+                caption=play_caption,
                 reply_markup=InlineKeyboardMarkup(button),
             )
             db[chat_id][0]["mystic"] = run
@@ -327,26 +343,30 @@ async def del_back_playlist(client, CallbackQuery, _):
                 return await CallbackQuery.message.reply_text(_["call_6"])
             if videoid == "telegram":
                 button = stream_markup(_, chat_id)
+                play_img = TELEGRAM_AUDIO_URL if str(streamtype) == "audio" else TELEGRAM_VIDEO_URL
+                play_caption = _["stream_1"].format(config.SUPPORT_CHAT, title[:23], duration, user)
+                from SONALI_MUSIC.utils.database_clone import get_custom_play_metadata
+                play_img, play_caption = await get_custom_play_metadata(
+                    app.id, title, duration, user, "", play_img, play_caption
+                )
                 run = await CallbackQuery.message.reply_photo(
-                    photo=TELEGRAM_AUDIO_URL
-                    if str(streamtype) == "audio"
-                    else TELEGRAM_VIDEO_URL,
-                    caption=_["stream_1"].format(
-                        config.SUPPORT_CHAT, title[:23], duration, user
-                    ),
+                    photo=play_img,
+                    caption=play_caption,
                     reply_markup=InlineKeyboardMarkup(button),
                 )
                 db[chat_id][0]["mystic"] = run
                 db[chat_id][0]["markup"] = "tg"
             elif videoid == "soundcloud":
                 button = stream_markup(_, chat_id)
+                play_img = SOUNCLOUD_IMG_URL if str(streamtype) == "audio" else TELEGRAM_VIDEO_URL
+                play_caption = _["stream_1"].format(config.SUPPORT_CHAT, title[:23], duration, user)
+                from SONALI_MUSIC.utils.database_clone import get_custom_play_metadata
+                play_img, play_caption = await get_custom_play_metadata(
+                    app.id, title, duration, user, "", play_img, play_caption
+                )
                 run = await CallbackQuery.message.reply_photo(
-                    photo=SOUNCLOUD_IMG_URL
-                    if str(streamtype) == "audio"
-                    else TELEGRAM_VIDEO_URL,
-                    caption=_["stream_1"].format(
-                        config.SUPPORT_CHAT, title[:23], duration, user
-                    ),
+                    photo=play_img,
+                    caption=play_caption,
                     reply_markup=InlineKeyboardMarkup(button),
                 )
                 db[chat_id][0]["mystic"] = run
@@ -354,14 +374,19 @@ async def del_back_playlist(client, CallbackQuery, _):
             else:
                 button = stream_markup(_, chat_id)
                 img = await get_thumb(videoid)
+                play_caption = _["stream_1"].format(
+                    f"https://t.me/{app.username}?start=info_{videoid}",
+                    title[:23],
+                    duration,
+                    user,
+                )
+                from SONALI_MUSIC.utils.database_clone import get_custom_play_metadata
+                img, play_caption = await get_custom_play_metadata(
+                    app.id, title, duration, user, videoid, img, play_caption
+                )
                 run = await CallbackQuery.message.reply_photo(
                     photo=img,
-                    caption=_["stream_1"].format(
-                        f"https://t.me/{app.username}?start=info_{videoid}",
-                        title[:23],
-                        duration,
-                        user,
-                    ),
+                    caption=play_caption,
                     reply_markup=InlineKeyboardMarkup(button),
                 )
                 db[chat_id][0]["mystic"] = run
