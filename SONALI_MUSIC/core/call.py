@@ -632,16 +632,21 @@ class Call(PyTgCalls):
                 )
             img = await get_thumb(videoid)
             button = stream_markup(_, chat_id)
+            play_caption = _["stream_1"].format(
+                f"https://t.me/{app.username}?start=info_{videoid}",
+                title[:23],
+                check[0]["dur"],
+                user,
+            )
+            from SONALI_MUSIC.utils.database_clone import get_custom_play_metadata
+            img, play_caption = await get_custom_play_metadata(
+                app.id, title, check[0]["dur"], user, videoid, img, play_caption
+            )
             run = await app.send_photo(
                 chat_id=original_chat_id,
                 photo=img,
                 has_spoiler=True,
-                caption=_["stream_1"].format(
-                    f"https://t.me/{app.username}?start=info_{videoid}",
-                    title[:23],
-                    check[0]["dur"],
-                    user,
-                ),
+                caption=play_caption,
                 reply_markup=InlineKeyboardMarkup(button),
             )
             db[chat_id][0]["mystic"] = run
@@ -670,16 +675,21 @@ class Call(PyTgCalls):
             img = await get_thumb(videoid)
             button = stream_markup(_, chat_id)
             await mystic.delete()
+            play_caption = _["stream_1"].format(
+                f"https://t.me/{app.username}?start=info_{videoid}",
+                title[:23],
+                check[0]["dur"],
+                user,
+            )
+            from SONALI_MUSIC.utils.database_clone import get_custom_play_metadata
+            img, play_caption = await get_custom_play_metadata(
+                app.id, title, check[0]["dur"], user, videoid, img, play_caption
+            )
             run = await app.send_photo(
                 chat_id=original_chat_id,
                 photo=img,
                 has_spoiler=True,
-                caption=_["stream_1"].format(
-                    f"https://t.me/{app.username}?start=info_{videoid}",
-                    title[:23],
-                    check[0]["dur"],
-                    user,
-                ),
+                caption=play_caption,
                 reply_markup=InlineKeyboardMarkup(button),
             )
             db[chat_id][0]["mystic"] = run
@@ -695,11 +705,17 @@ class Call(PyTgCalls):
                     text=_["call_6"],
                 )
             button = stream_markup(_, chat_id)
+            play_img = config.STREAM_IMG_URL
+            play_caption = _["stream_2"].format(user)
+            from SONALI_MUSIC.utils.database_clone import get_custom_play_metadata
+            play_img, play_caption = await get_custom_play_metadata(
+                app.id, title, check[0]["dur"], user, "", play_img, play_caption
+            )
             run = await app.send_photo(
                 chat_id=original_chat_id,
-                photo=config.STREAM_IMG_URL,
+                photo=play_img,
                 has_spoiler=True,
-                caption=_["stream_2"].format(user),
+                caption=play_caption,
                 reply_markup=InlineKeyboardMarkup(button),
             )
             db[chat_id][0]["mystic"] = run
@@ -715,28 +731,32 @@ class Call(PyTgCalls):
                 )
             if videoid == "telegram":
                 button = stream_markup(_, chat_id)
+                play_img = config.TELEGRAM_AUDIO_URL if str(streamtype) == "audio" else config.TELEGRAM_VIDEO_URL
+                play_caption = _["stream_1"].format(config.SUPPORT_CHAT, title[:23], check[0]["dur"], user)
+                from SONALI_MUSIC.utils.database_clone import get_custom_play_metadata
+                play_img, play_caption = await get_custom_play_metadata(
+                    app.id, title, check[0]["dur"], user, "", play_img, play_caption
+                )
                 run = await app.send_photo(
                     chat_id=original_chat_id,
-                    photo=(
-                        config.TELEGRAM_AUDIO_URL
-                        if str(streamtype) == "audio"
-                        else config.TELEGRAM_VIDEO_URL
-                    ),
-                    caption=_["stream_1"].format(
-                        config.SUPPORT_CHAT, title[:23], check[0]["dur"], user
-                    ),
+                    photo=play_img,
+                    caption=play_caption,
                     reply_markup=InlineKeyboardMarkup(button),
                 )
                 db[chat_id][0]["mystic"] = run
                 db[chat_id][0]["markup"] = "tg"
             elif videoid == "soundcloud":
                 button = stream_markup(_, chat_id)
+                play_img = config.SOUNCLOUD_IMG_URL
+                play_caption = _["stream_1"].format(config.SUPPORT_CHAT, title[:23], check[0]["dur"], user)
+                from SONALI_MUSIC.utils.database_clone import get_custom_play_metadata
+                play_img, play_caption = await get_custom_play_metadata(
+                    app.id, title, check[0]["dur"], user, "", play_img, play_caption
+                )
                 run = await app.send_photo(
                     chat_id=original_chat_id,
-                    photo=config.SOUNCLOUD_IMG_URL,
-                    caption=_["stream_1"].format(
-                        config.SUPPORT_CHAT, title[:23], check[0]["dur"], user
-                    ),
+                    photo=play_img,
+                    caption=play_caption,
                     reply_markup=InlineKeyboardMarkup(button),
                 )
                 db[chat_id][0]["mystic"] = run
@@ -744,16 +764,21 @@ class Call(PyTgCalls):
             else:
                 img = await get_thumb(videoid)
                 button = stream_markup(_, chat_id)
+                play_caption = _["stream_1"].format(
+                    f"https://t.me/{app.username}?start=info_{videoid}",
+                    title[:23],
+                    check[0]["dur"],
+                    user,
+                )
+                from SONALI_MUSIC.utils.database_clone import get_custom_play_metadata
+                img, play_caption = await get_custom_play_metadata(
+                    app.id, title, check[0]["dur"], user, videoid, img, play_caption
+                )
                 run = await app.send_photo(
                     chat_id=original_chat_id,
                     photo=img,
                     has_spoiler=True,
-                    caption=_["stream_1"].format(
-                        f"https://t.me/{app.username}?start=info_{videoid}",
-                        title[:23],
-                        check[0]["dur"],
-                        user,
-                    ),
+                    caption=play_caption,
                     reply_markup=InlineKeyboardMarkup(button),
                 )
                 db[chat_id][0]["mystic"] = run

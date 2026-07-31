@@ -176,6 +176,11 @@ async def list_clones_cmd(client, message: Message):
 
     from SONALI_MUSIC.utils.database import active
     from SONALI_MUSIC.misc import db
+    from SONALI_MUSIC.utils.database_clone import get_cloned_served_chats_count, get_cloned_served_users_count
+
+    total_clones = len(clones)
+    total_chats = 0
+    total_users = 0
 
     text = f"📊 **{to_smallcap('master clone list')}**\n\n"
     for i, clone in enumerate(clones, 1):
@@ -194,14 +199,26 @@ async def list_clones_cmd(client, message: Message):
                     playing_song = f"🎵 {queue[0].get('title')} (Chat: `{chat_id}`)"
                     break
 
+        chats_count = await get_cloned_served_chats_count(bot_id)
+        users_count = await get_cloned_served_users_count(bot_id)
+        total_chats += chats_count
+        total_users += users_count
+
         text += (
             f"{i}. **{clone.get('bot_name')}** (@{clone.get('bot_username')})\n"
             f"   ID: `{bot_id}`\n"
             f"   Tenant: `{tenant_id}` (@{tenant_username})\n"
             f"   Status: **{status}**\n"
+            f"   Chats Joined: `{chats_count}`\n"
+            f"   Users: `{users_count}`\n"
             f"   Now Playing: **{playing_song}**\n\n"
         )
 
+    text += (
+        f"📈 **Total Clones:** `{total_clones}`\n"
+        f"💬 **Total Chats across Clones:** `{total_chats}`\n"
+        f"👥 **Total Users across Clones:** `{total_users}`\n"
+    )
     await message.reply_text(text)
 
 
@@ -312,6 +329,14 @@ async def clones_stats_cmd(client, message: Message):
     active_clones = sum(1 for c in clones if c.get("status") == "active")
     paused_clones = total - active_clones
 
+    from SONALI_MUSIC.utils.database_clone import get_cloned_served_chats_count, get_cloned_served_users_count
+    total_chats = 0
+    total_users = 0
+    for clone in clones:
+        bot_id = clone.get("bot_id")
+        total_chats += await get_cloned_served_chats_count(bot_id)
+        total_users += await get_cloned_served_users_count(bot_id)
+
     cpu = psutil.cpu_percent()
     ram = psutil.virtual_memory().percent
 
@@ -319,7 +344,9 @@ async def clones_stats_cmd(client, message: Message):
         f"📊 **{to_smallcap('clone platform stats')}**\n\n"
         f"🤖 **Total Cloned Bots:** {total}\n"
         f" ├ ⚡ **Active:** {active_clones}\n"
-        f" └ ⏸️ **Paused:** {paused_clones}\n\n"
+        f" ├ ⏸️ **Paused:** {paused_clones}\n"
+        f" ├ 💬 **Total Joined Chats:** {total_chats}\n"
+        f" └ 👥 **Total Users:** {total_users}\n\n"
         f"🖥️ **System Resource Usage:**\n"
         f" ├ 🧠 **CPU:** {cpu}%\n"
         f" └ 📼 **RAM:** {ram}%\n"
