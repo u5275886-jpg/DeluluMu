@@ -2,6 +2,7 @@ from pyrogram import Client, filters
 from pyrogram.types import Message
 from pymongo import MongoClient
 import re
+import certifi
 from SONALI_MUSIC import app as Sona
 
 
@@ -18,7 +19,7 @@ async def mongo_command(client, message: Message):
     if re.match(mongo_url_pattern, mongo_url):
         try:
             # Attempt to connect to the MongoDB instance
-            client = MongoClient(mongo_url, serverSelectionTimeoutMS=5000)
+            client = MongoClient(mongo_url, serverSelectionTimeoutMS=5000, tlsCAFile=certifi.where())
             client.server_info()  # Will cause an exception if connection fails
             await message.reply("𝗠𝗼𝗻𝗴𝗼𝗗𝗕 𝗨𝗥𝗟 𝗶𝘀 𝘃𝗮𝗹𝗶𝗱 𝗮𝗻𝗱 𝗰𝗼𝗻𝗻𝗲𝗰𝘁𝗶𝗼𝗻 𝘀𝘂𝗰𝗰𝗲𝘀𝘀𝗳𝘂𝗹✅")
         except Exception as e:

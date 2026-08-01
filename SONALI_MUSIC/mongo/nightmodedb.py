@@ -1,9 +1,10 @@
 from typing import Dict, List, Union
+import certifi
 from config import MONGO_DB_URI
 from motor.motor_asyncio import AsyncIOMotorClient as MongoCli
 
 
-mongo = MongoCli(MONGO_DB_URI).Rankings
+mongo = MongoCli(MONGO_DB_URI, tlsCAFile=certifi.where()).Rankings
 
 nightdb = mongo.nightmode
 
