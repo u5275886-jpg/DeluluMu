@@ -20,12 +20,13 @@
 
 
 from typing import Dict, Union
+import certifi
 
 from motor.motor_asyncio import AsyncIOMotorClient as MongoCli
 
 from config import MONGO_DB_URI
 
-mongo = MongoCli(MONGO_DB_URI)
+mongo = MongoCli(MONGO_DB_URI, tlsCAFile=certifi.where())
 db = mongo.SONALI_MUSIC
 
 coupledb = db.couple
