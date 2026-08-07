@@ -106,7 +106,7 @@ async def start_pm(client, message: Message, _):
                 except Exception:
                     pass
     else:
-        out = await private_panel(_, bot_id=client.me.id)
+        out = await private_panel(_, bot_id=client.me.id, user_id=message.from_user.id)
         baby = await message.reply_text(f"**__ᴅɪηɢ ᴅᴏηɢ.🥀__**")
         await baby.edit_text(f"**__ᴅɪηɢ ᴅᴏηɢ..🥀__**")
         await baby.edit_text(f"**__ᴅɪηɢ ᴅᴏηɢ...🥀__**")

@@ -97,7 +97,7 @@ async def settings_back_markup(client, CallbackQuery: CallbackQuery, _):
     if CallbackQuery.message.chat.type == ChatType.PRIVATE:
         await app.resolve_peer(OWNER_ID)
         OWNER = OWNER_ID
-        buttons = await private_panel(_, bot_id=client.me.id)
+        buttons = await private_panel(_, bot_id=client.me.id, user_id=CallbackQuery.from_user.id)
         return await CallbackQuery.edit_message_text(
             _["start_2"].format(CallbackQuery.from_user.mention, app.mention),
             reply_markup=InlineKeyboardMarkup(buttons),

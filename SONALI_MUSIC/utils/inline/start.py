@@ -1,4 +1,4 @@
-from pyrogram.types import InlineKeyboardButton
+from pyrogram.types import InlineKeyboardButton, WebAppInfo
 
 import config
 from SONALI_MUSIC import app
@@ -16,7 +16,7 @@ def start_panel(_):
     return buttons
 
 
-async def private_panel(_, bot_id=None):
+async def private_panel(_, bot_id=None, user_id=None):
     bot_username = app.username
     owner_link = f"https://t.me/{config.OWNER_USERNAME}"
 
@@ -47,8 +47,47 @@ async def private_panel(_, bot_id=None):
                         else:
                             buttons.append([InlineKeyboardButton(text=b_text, callback_data=f"CLONE_CUST_BTN_{bot_id}_{idx}")])
                     return buttons
+                else:
+                    # Default custom start panel for cloned bots (includes Mini App but NO clone buttons)
+                    buttons = [
+                        [
+                            InlineKeyboardButton(
+                                text=_["S_B_3"],
+                                url=f"https://t.me/{bot_username}?startgroup=true",
+                            )
+                        ],
+                        [
+                            InlineKeyboardButton(
+                                text="Mini App 🚀",
+                                web_app=WebAppInfo(url="https://music-theta-teal-86.vercel.app/"),
+                            )
+                        ],
+                        [
+                            InlineKeyboardButton(text=_["S_B_4"], callback_data="MAIN_CP"),
+                        ],
+                        [
+                            InlineKeyboardButton(text=_["S_B_5"], url=owner_link),
+                            InlineKeyboardButton("⌯ ᴧʙσυт ⌯", callback_data="ALLBOT_CP"),
+                        ]
+                    ]
+                    return buttons
         except Exception:
             pass
+
+    # Main Bot Start Panel logic: check user clones to conditionally show Clone or Manage Clone
+    clones = []
+    if user_id:
+        try:
+            from SONALI_MUSIC.utils.database_clone import get_user_clones
+            clones = await get_user_clones(user_id)
+        except Exception:
+            pass
+
+    clone_manage_row = []
+    if len(clones) == 0:
+        clone_manage_row.append(InlineKeyboardButton("ᴄʟᴏɴᴇ", callback_data="CLONE_BTN"))
+    else:
+        clone_manage_row.append(InlineKeyboardButton("ᴍᴀɴᴀɢᴇ ᴄʟᴏɴᴇ", callback_data="MANAGE_CLONE_BTN"))
 
     buttons = [
         [
@@ -58,7 +97,6 @@ async def private_panel(_, bot_id=None):
             )
         ],
         [
-            
             InlineKeyboardButton(text=_["S_B_4"], callback_data="MAIN_CP"),
         ],
         [
@@ -68,9 +106,6 @@ async def private_panel(_, bot_id=None):
         [
             InlineKeyboardButton("⌯ ʏᴛ-ᴀᴘɪ ⌯", callback_data="bot_info_data"),
         ],
-        [
-            InlineKeyboardButton("ᴄʟᴏɴᴇ", callback_data="CLONE_BTN"),
-            InlineKeyboardButton("ᴍᴀɴᴀɢᴇ ᴄʟᴏɴᴇ", callback_data="MANAGE_CLONE_BTN"),
-        ],
+        clone_manage_row,
     ]
     return buttons
