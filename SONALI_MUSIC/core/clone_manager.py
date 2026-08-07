@@ -161,6 +161,19 @@ class CloneManager:
             except Exception as e:
                 logger.error(f"Error setting default commands for clone @{me.username}: {e}")
 
+            # Set Menu Button (Web App) for clone bot automatically
+            try:
+                from pyrogram.types import MenuButtonWebApp, WebAppInfo
+                await clone_client.set_menu_button(
+                    menu_button=MenuButtonWebApp(
+                        text="Mini App",
+                        web_app=WebAppInfo(url="https://music-theta-teal-86.vercel.app/")
+                    )
+                )
+                logger.info(f"Successfully set Menu Button Web App for clone @{me.username}")
+            except Exception as e:
+                logger.error(f"Error setting menu button for clone @{me.username}: {e}")
+
             self.clones[me.id] = clone_client
             await update_clone_status(me.id, "active")
 
