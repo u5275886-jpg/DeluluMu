@@ -21,9 +21,21 @@ from SONALI_MUSIC.utils.database_clone import (
     remove_supreme_admin,
     get_supreme_admins,
     get_cloned_served_chats,
-    get_cloned_served_users
+    get_cloned_served_users,
+    cleanup_stale_chat,
+    cleanup_stale_user
 )
 from SONALI_MUSIC.utils.Sona_font import Fonts
+from pyrogram.errors import (
+    PeerIdInvalid,
+    ChannelInvalid,
+    ChannelPrivate,
+    ChatWriteForbidden,
+    UserIsBlocked,
+    InputUserDeactivated,
+    ChatAdminRequired,
+    FloodWait
+)
 from config import BANNED_USERS
 
 logger = logging.getLogger(__name__)
@@ -425,7 +437,7 @@ async def broadcast_group_all_cmd(client, message: Message):
     status_msg = await message.reply_text("📢 **Starting global group broadcast across all bots...**")
 
     # Get all active bots (main bot + active clones)
-    bots = [(app, app._orig_id if hasattr(app, "_orig_id") else app.id, "Main Bot")]
+    bots = [(app, getattr(app, "id", None) or (app.me.id if app.me else None), "Main Bot")]
 
     clones = await get_all_clones()
     for clone in clones:
@@ -450,6 +462,22 @@ async def broadcast_group_all_cmd(client, message: Message):
             try:
                 await bot_client.send_message(chat_id, broadcast_text)
                 success_count += 1
+            except FloodWait as fw:
+                await asyncio.sleep(fw.value)
+                try:
+                    await bot_client.send_message(chat_id, broadcast_text)
+                    success_count += 1
+                except (PeerIdInvalid, ChannelInvalid, ChannelPrivate, ChatWriteForbidden) as e:
+                    logger.warning(f"Group/channel became stale during broadcast retry on {bot_name} to chat {chat_id}: {e}. Removing from DB.")
+                    await cleanup_stale_chat(bot_id, chat_id)
+                    fail_count += 1
+                except Exception as e:
+                    logger.error(f"Failed to send group broadcast on {bot_name} to chat {chat_id} after floodwait: {e}")
+                    fail_count += 1
+            except (PeerIdInvalid, ChannelInvalid, ChannelPrivate, ChatWriteForbidden) as e:
+                logger.warning(f"Stale group/channel entity detected on {bot_name} for chat {chat_id}: {e}. Removing from DB.")
+                await cleanup_stale_chat(bot_id, chat_id)
+                fail_count += 1
             except Exception as e:
                 logger.error(f"Failed to send group broadcast on {bot_name} to chat {chat_id}: {e}")
                 fail_count += 1
@@ -475,7 +503,7 @@ async def broadcast_private_all_cmd(client, message: Message):
     status_msg = await message.reply_text("📢 **Starting global private broadcast across all bots...**")
 
     # Get all active bots (main bot + active clones)
-    bots = [(app, app._orig_id if hasattr(app, "_orig_id") else app.id, "Main Bot")]
+    bots = [(app, getattr(app, "id", None) or (app.me.id if app.me else None), "Main Bot")]
 
     clones = await get_all_clones()
     for clone in clones:
@@ -500,6 +528,22 @@ async def broadcast_private_all_cmd(client, message: Message):
             try:
                 await bot_client.send_message(user_id, broadcast_text)
                 success_count += 1
+            except FloodWait as fw:
+                await asyncio.sleep(fw.value)
+                try:
+                    await bot_client.send_message(user_id, broadcast_text)
+                    success_count += 1
+                except (PeerIdInvalid, UserIsBlocked, InputUserDeactivated) as e:
+                    logger.warning(f"User became stale during broadcast retry on {bot_name} to user {user_id}: {e}. Removing from DB.")
+                    await cleanup_stale_user(bot_id, user_id)
+                    fail_count += 1
+                except Exception as e:
+                    logger.error(f"Failed to send private broadcast on {bot_name} to user {user_id} after floodwait: {e}")
+                    fail_count += 1
+            except (PeerIdInvalid, UserIsBlocked, InputUserDeactivated) as e:
+                logger.warning(f"Stale user entity detected on {bot_name} for user {user_id}: {e}. Removing from DB.")
+                await cleanup_stale_user(bot_id, user_id)
+                fail_count += 1
             except Exception as e:
                 logger.error(f"Failed to send private broadcast on {bot_name} to user {user_id}: {e}")
                 fail_count += 1

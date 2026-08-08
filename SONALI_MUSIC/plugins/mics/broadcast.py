@@ -1,10 +1,22 @@
 import asyncio
+import logging
 
 from pyrogram import filters
 from pyrogram.enums import ChatMembersFilter
-from pyrogram.errors import FloodWait
+from pyrogram.errors import (
+    FloodWait,
+    PeerIdInvalid,
+    ChannelInvalid,
+    ChannelPrivate,
+    ChatWriteForbidden,
+    UserIsBlocked,
+    InputUserDeactivated
+)
 
 from SONALI_MUSIC import app
+from SONALI_MUSIC.utils.database_clone import cleanup_stale_chat, cleanup_stale_user
+
+logger = logging.getLogger(__name__)
 from SONALI_MUSIC.misc import SUDOERS
 from SONALI_MUSIC.utils.database import (
     get_active_chats,
@@ -166,6 +178,9 @@ async def braodcast_message(client, message, _):
 
     # ================= CHAT BROADCAST =================
     for b_client, chat_id in chats_targets:
+        # Resolve bot_id safely
+        b_id = getattr(b_client, "id", None) or (b_client.me.id if (hasattr(b_client, "me") and b_client.me) else app.id)
+
         try:
             m = await send_broadcast_message(b_client, chat_id, message, query if not message.reply_to_message else None, reply_markup)
             if m:
@@ -194,8 +209,16 @@ async def braodcast_message(client, message, _):
                     sent_chats += 1
                 else:
                     failed_chats += 1
-            except:
+            except (PeerIdInvalid, ChannelInvalid, ChannelPrivate, ChatWriteForbidden) as e:
+                logger.warning(f"Group/channel became stale during broadcast retry on clone {b_id} for chat {chat_id}: {e}. Removing from DB.")
+                await cleanup_stale_chat(b_id, chat_id)
                 failed_chats += 1
+            except Exception:
+                failed_chats += 1
+        except (PeerIdInvalid, ChannelInvalid, ChannelPrivate, ChatWriteForbidden) as e:
+            logger.warning(f"Stale group/channel entity detected on clone {b_id} for chat {chat_id}: {e}. Removing from DB.")
+            await cleanup_stale_chat(b_id, chat_id)
+            failed_chats += 1
         except Exception:
             failed_chats += 1
 
@@ -204,6 +227,9 @@ async def braodcast_message(client, message, _):
     failed_users = 0
 
     for b_client, user_id in users_targets:
+        # Resolve bot_id safely
+        b_id = getattr(b_client, "id", None) or (b_client.me.id if (hasattr(b_client, "me") and b_client.me) else app.id)
+
         try:
             m = await send_broadcast_message(b_client, user_id, message, query if not message.reply_to_message else None, reply_markup)
             if m:
@@ -219,8 +245,16 @@ async def braodcast_message(client, message, _):
                     sent_users += 1
                 else:
                     failed_users += 1
-            except:
+            except (PeerIdInvalid, UserIsBlocked, InputUserDeactivated) as e:
+                logger.warning(f"User became stale during broadcast retry on clone {b_id} for user {user_id}: {e}. Removing from DB.")
+                await cleanup_stale_user(b_id, user_id)
                 failed_users += 1
+            except Exception:
+                failed_users += 1
+        except (PeerIdInvalid, UserIsBlocked, InputUserDeactivated) as e:
+            logger.warning(f"Stale user entity detected on clone {b_id} for user {user_id}: {e}. Removing from DB.")
+            await cleanup_stale_user(b_id, user_id)
+            failed_users += 1
         except Exception:
             failed_users += 1
 
