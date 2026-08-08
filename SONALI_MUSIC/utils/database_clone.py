@@ -132,7 +132,8 @@ async def save_clone_bot(
         "playback_preferences": "Direct",
         "queue_behavior": "Standard",
         "custom_buttons": [],
-        "help_texts": {}
+        "help_texts": {},
+        "ads_off": False
     }
 
     if settings:
@@ -399,6 +400,14 @@ async def get_custom_play_metadata(
                     .replace("{link}", link)
                     .replace("{bot_username}", bot_username)
                 )
+
+            # Contextual Advertising Check
+            ads_off = settings.get("ads_off", False)
+            if not ads_off:
+                from SONALI_MUSIC import app as main_app
+                promo_username = getattr(main_app, "_orig_username", main_app.username) or "MusicBot"
+                play_caption += f"\n\n📢 **[Create Your Own Music Bot](https://t.me/{promo_username})**"
+
             return play_img, play_caption
     except Exception as e:
         import logging

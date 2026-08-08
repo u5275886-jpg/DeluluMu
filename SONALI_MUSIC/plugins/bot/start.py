@@ -139,6 +139,13 @@ async def start_pm(client, message: Message, _):
                     welcome_img = cust_img
                 if cust_text and cust_text != "Welcome to my cloned music player bot!":
                     welcome_caption = cust_text.replace("{user}", message.from_user.first_name).replace("{mention}", message.from_user.mention)
+
+                # Contextual Advertising Check for Welcome Panel
+                ads_off = settings.get("ads_off", False)
+                if not ads_off:
+                    from SONALI_MUSIC import app as main_app
+                    promo_username = getattr(main_app, "_orig_username", main_app.username) or "MusicBot"
+                    welcome_caption += f"\n\n📢 **[Create Your Own Music Bot](https://t.me/{promo_username})**"
         except Exception as e:
             print(f"Error loading clone welcome customization: {e}")
         

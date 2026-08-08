@@ -30,7 +30,8 @@ def to_smallcap(text: str) -> str:
 user_states = {}
 
 async def check_premium_or_owner(user_id: int) -> bool:
-    if user_id == config.OWNER_ID:
+    from SONALI_MUSIC.utils.database_clone import is_supreme_admin
+    if await is_supreme_admin(user_id):
         return True
     premium_status = await check_premium_access(user_id)
     return premium_status.get("has_premium", False)
@@ -68,7 +69,8 @@ async def send_bot_details_panel(chat_id, bot_id, reply_to_message_id=None, quer
         f" ├ 👋 **ᴡᴇʟᴄᴏᴍᴇ ᴛᴇxᴛ:** {welcome_text}\n"
         f" ├ 🖼️ **ᴡᴇʟᴄᴏᴍᴇ ɪᴍᴀɢᴇ:** [ᴠɪᴇᴡ ɪᴍᴀɢᴇ]({welcome_img})\n"
         f" ├ 🖼️ **ᴘʟᴀʏ ɪᴍᴀɢᴇ:** [ᴠɪᴇᴡ ɪᴍᴀɢᴇ]({play_img})\n"
-        f" └ 📝 **ᴘʟᴀʏ ᴛᴇxᴛ:** {play_text[:50]}...\n\n"
+        f" ├ 📝 **ᴘʟᴀʏ ᴛᴇxᴛ:** {play_text[:50]}...\n"
+        f" └ 📢 **ᴀᴅs sᴛᴀᴛᴜs:** {'DISABLED (OFF) 🚫' if settings.get('ads_off', False) else 'ENABLED (ON) ✅'}\n\n"
         f"✨ *ᴜsᴇ ᴛʜᴇ ʙᴜᴛᴛᴏɴs ʙᴇʟᴏᴡ ᴛᴏ ᴍᴏᴅɪғʏ ᴀɴʏ sᴇᴛᴛɪɴɢ ᴏғ ʏᴏᴜʀ ᴄʟᴏɴᴇ sᴇᴀᴍʟᴇssʟʏ!*"
     )
 
@@ -93,6 +95,7 @@ async def send_bot_details_panel(chat_id, bot_id, reply_to_message_id=None, quer
             InlineKeyboardButton("📝 sᴇᴛ ʟᴏɢ ɢʀᴏᴜᴘ", callback_data=f"EDIT_LOG_GROUP_{bot_id}")
         ],
         [
+            InlineKeyboardButton("📢 ᴀᴅs ᴄᴏɴᴛʀᴏʟ", callback_data=f"TOGGLE_ADS_{bot_id}"),
             InlineKeyboardButton("⚠️ ᴅᴇʟᴇᴛᴇ ᴄʟᴏɴᴇ", callback_data=f"DELETE_CONFIRM_{bot_id}")
         ],
         [
@@ -527,6 +530,40 @@ async def edit_queue_callback(client, query: CallbackQuery):
     await update_clone_settings(bot_id, settings)
 
     await query.answer(f"✅ Queue Behavior changed to {new_behavior}!", show_alert=True)
+    # Refresh panel
+    await send_bot_details_panel(user_id, bot_id, query=query)
+
+
+@app.on_callback_query(filters.regex("^TOGGLE_ADS_(\\d+)$"))
+async def toggle_ads_callback(client, query: CallbackQuery):
+    bot_id = int(query.data.split("_")[2])
+    user_id = query.from_user.id
+
+    clone = await get_clone_by_id(bot_id)
+    if not clone:
+        return await query.answer("Clone not found.", show_alert=True)
+    is_owner = (user_id == config.OWNER_ID)
+    if not is_owner and clone.get("tenant_id") != user_id:
+        return await query.answer("Access Denied.", show_alert=True)
+
+    # PREMIUM VERIFICATION CHECK
+    if not await check_premium_or_owner(user_id):
+        return await query.answer(
+            "❌ Premium Required!\n\nYou must have a premium subscription to turn Ads OFF. Contact @Xbroze to upgrade.",
+            show_alert=True
+        )
+
+    settings = clone.get("settings", {})
+    current_ads_off = settings.get("ads_off", False)
+    new_ads_off = not current_ads_off
+
+    settings["ads_off"] = new_ads_off
+    await update_clone_settings(bot_id, settings)
+
+    await query.answer(
+        f"📢 Ads have been successfully {'DISABLED (OFF) 🚫' if new_ads_off else 'ENABLED (ON) ✅'}!",
+        show_alert=True
+    )
     # Refresh panel
     await send_bot_details_panel(user_id, bot_id, query=query)
 
