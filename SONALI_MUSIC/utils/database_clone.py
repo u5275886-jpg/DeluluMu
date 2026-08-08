@@ -447,3 +447,33 @@ async def get_custom_play_metadata(
         import logging
         logging.getLogger(__name__).error(f"Error in get_custom_play_metadata: {e}")
     return default_img, default_caption
+
+# ----------------------------------------------------------------------
+# 7. AUTOMATED STALE ENTITY CLEANUP HELPERS
+# ----------------------------------------------------------------------
+
+async def cleanup_stale_chat(bot_id: int, chat_id: int):
+    """
+    Cleans up a stale group chat from database (main bot and clone tracking).
+    """
+    from SONALI_MUSIC import app
+    main_bot_id = app._orig_id if hasattr(app, "_orig_id") else app.id
+    if bot_id == main_bot_id:
+        from SONALI_MUSIC.utils.database import chatsdb
+        await chatsdb.delete_one({"chat_id": chat_id})
+
+    # Also delete from cloned chats database
+    await cloned_chats_db.delete_one({"bot_id": bot_id, "chat_id": chat_id})
+
+async def cleanup_stale_user(bot_id: int, user_id: int):
+    """
+    Cleans up a stale private user from database (main bot and clone tracking).
+    """
+    from SONALI_MUSIC import app
+    main_bot_id = app._orig_id if hasattr(app, "_orig_id") else app.id
+    if bot_id == main_bot_id:
+        from SONALI_MUSIC.utils.database import usersdb
+        await usersdb.delete_one({"user_id": user_id})
+
+    # Also delete from cloned users database
+    await cloned_users_db.delete_one({"bot_id": bot_id, "user_id": user_id})
