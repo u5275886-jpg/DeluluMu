@@ -438,14 +438,13 @@ async def broadcast_group_all_cmd(client, message: Message):
     success_count = 0
     fail_count = 0
 
-    from SONALI_MUSIC.utils.database import get_served_chats
+    from SONALI_MUSIC.utils.database_clone import get_main_bot_served_chats
 
     for bot_client, bot_id, bot_name in bots:
-        chats = await get_cloned_served_chats(bot_id)
-        # Fallback for main bot if cloned served chats collection is empty
-        if not chats and bot_client == app:
-            served_chats = await get_served_chats()
-            chats = [c["chat_id"] for c in served_chats]
+        if bot_client == app:
+            chats = await get_main_bot_served_chats()
+        else:
+            chats = await get_cloned_served_chats(bot_id)
 
         for chat_id in chats:
             try:
@@ -489,14 +488,13 @@ async def broadcast_private_all_cmd(client, message: Message):
     success_count = 0
     fail_count = 0
 
-    from SONALI_MUSIC.utils.database import get_served_users
+    from SONALI_MUSIC.utils.database_clone import get_main_bot_served_users
 
     for bot_client, bot_id, bot_name in bots:
-        users = await get_cloned_served_users(bot_id)
-        # Fallback for main bot if cloned served users collection is empty
-        if not users and bot_client == app:
-            served_users = await get_served_users()
-            users = [u["user_id"] for u in served_users]
+        if bot_client == app:
+            users = await get_main_bot_served_users()
+        else:
+            users = await get_cloned_served_users(bot_id)
 
         for user_id in users:
             try:
