@@ -715,8 +715,8 @@ async def handle_user_input_state(client, message: Message):
             return await message.reply_text("❌ **Value cannot be empty! Please send a valid text.**")
 
         if btn_type == "url":
-            if not (btn_value.startswith("http://") or btn_value.startswith("https://")):
-                return await message.reply_text("❌ **Invalid URL! The link must start with http:// or https://. Try again:**")
+            if not (btn_value.startswith("http://") or btn_value.startswith("https://") or btn_value.startswith("tg://")):
+                return await message.reply_text("❌ **Invalid URL! The link must start with http://, https:// or tg://. Try again:**")
         elif btn_type == "alert":
             if len(btn_value) > 200:
                 return await message.reply_text("❌ **Alert text is too long! Keep it under 200 characters. Try again:**")
@@ -760,8 +760,8 @@ async def handle_user_input_state(client, message: Message):
         else: # value
             btn_type = custom_buttons[idx].get("type", "url")
             if btn_type == "url":
-                if not (new_val.startswith("http://") or new_val.startswith("https://")):
-                    return await message.reply_text("❌ **Invalid URL! The link must start with http:// or https://. Try again:**")
+                if not (new_val.startswith("http://") or new_val.startswith("https://") or new_val.startswith("tg://")):
+                    return await message.reply_text("❌ **Invalid URL! The link must start with http://, https:// or tg://. Try again:**")
             elif btn_type == "alert":
                 if len(new_val) > 200:
                     return await message.reply_text("❌ **Alert text is too long! Keep it under 200 characters. Try again:**")
@@ -1122,14 +1122,17 @@ async def send_custom_buttons_panel(chat_id, bot_id, reply_to_message_id=None, q
 
     buttons = [
         [
-            InlineKeyboardButton("➕ ᴀᴅᴅ ʙᴜᴛᴛᴏɴ", callback_data=f"ADD_CUST_BTN_{bot_id}"),
-            InlineKeyboardButton("✏️ ᴇᴅɪᴛ ʙᴜᴛᴛᴏɴ", callback_data=f"EDIT_CUST_BTN_{bot_id}"),
+            InlineKeyboardButton("➕ ᴧᴅᴅ ʙᴜᴛᴛση", callback_data=f"ADD_CUST_BTN_{bot_id}"),
+            InlineKeyboardButton("✏️ єᴅɪᴛ ʙᴜᴛᴛση", callback_data=f"EDIT_CUST_BTN_{bot_id}"),
         ],
         [
-            InlineKeyboardButton("🔄 ʀᴇsᴇᴛ ᴛᴏ ᴅᴇғᴀᴜʟᴛ", callback_data=f"RESET_CUST_BTN_{bot_id}")
+            InlineKeyboardButton("✨ ʟσᴧᴅ ᴅєғᴧᴜʟᴛ ᴛєᴍᴘʟᴧᴛє", callback_data=f"LOAD_DEFAULT_TEMPLATE_{bot_id}")
         ],
         [
-            InlineKeyboardButton("🔙 ʙᴀᴄᴋ", callback_data=f"MANAGE_BOT_{bot_id}")
+            InlineKeyboardButton("🔄 ʀєsєᴛ ᴛσ ɪηнєʀɪᴛ", callback_data=f"RESET_CUST_BTN_{bot_id}")
+        ],
+        [
+            InlineKeyboardButton("🔙 ʙᴧᴄᴋ", callback_data=f"MANAGE_BOT_{bot_id}")
         ]
     ]
     markup = InlineKeyboardMarkup(buttons)
@@ -1394,7 +1397,7 @@ async def field_edit_custom_button_callback(client, query: CallbackQuery):
             prompt = (
                 f"🔗 **『 ᴇᴅɪᴛ ʙᴜᴛᴛᴏɴ ʟɪɴᴋ 』**\n\n"
                 f"Current URL: `{btn.get('value')}`\n\n"
-                f"ᴘʟᴇᴀsᴇ sᴇɴᴅ ᴛʜᴇ ɴᴇᴡ **ᴜʀʟ** (link) starting with http:// or https://:\n"
+                f"ᴘʟᴇᴀsᴇ sᴇɴᴅ ᴛʜᴇ ɴᴇᴡ **ᴜʀʟ** (link) starting with http://, https:// or tg://:\n"
                 f"*(Send /cancel to cancel this operation)*"
             )
         elif btn_type == "alert":
@@ -1442,6 +1445,59 @@ async def save_edit_custom_button_type_callback(client, query: CallbackQuery):
         await query.answer("❌ Button not found.", show_alert=True)
 
     await select_edit_custom_button_callback(client, query)
+
+
+@app.on_callback_query(filters.regex("^LOAD_DEFAULT_TEMPLATE_(\\d+)$"))
+async def load_default_template_callback(client, query: CallbackQuery):
+    bot_id = int(query.data.split("_")[3])
+    user_id = query.from_user.id
+
+    clone = await get_clone_by_id(bot_id)
+    if not clone:
+        return await query.answer("Clone not found.", show_alert=True)
+    is_owner = (user_id == config.OWNER_ID)
+    if not is_owner and clone.get("tenant_id") != user_id:
+        return await query.answer("Access Denied.", show_alert=True)
+
+    bot_username = clone.get("bot_username") or "MusicBot"
+    tenant_username = clone.get("tenant_username")
+    owner_link = f"https://t.me/{tenant_username}" if tenant_username else f"tg://user?id={clone.get('tenant_id')}"
+
+    # Pre-populate default customizable premium layout template
+    default_template = [
+        {
+            "text": "➕ ᴧᴅᴅ ᴍє ᴛσ ɢʀσυᴘ",
+            "type": "url",
+            "value": f"https://t.me/{bot_username}?startgroup=true"
+        },
+        {
+            "text": "🚀 ᴍɪηɪ ᴧᴘᴘ",
+            "type": "url",
+            "value": "https://music-theta-teal-86.vercel.app/"
+        },
+        {
+            "text": "✨ ᴄσᴍᴍᴧηᴅs",
+            "type": "message",
+            "value": "/help"
+        },
+        {
+            "text": "👑 σωηєʀ",
+            "type": "url",
+            "value": owner_link
+        },
+        {
+            "text": "⌯ ᴧʙσυт ⌯",
+            "type": "message",
+            "value": "/about"
+        }
+    ]
+
+    settings = clone.get("settings", {})
+    settings["custom_buttons"] = default_template
+    await update_clone_settings(bot_id, settings)
+    await query.answer("✨ Premium Default Customizable Template Loaded successfully!", show_alert=True)
+
+    await send_custom_buttons_panel(user_id, bot_id, query=query)
 
 
 @app.on_callback_query(filters.regex("^RESET_CUST_BTN_(\\d+)$"))

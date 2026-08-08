@@ -362,6 +362,40 @@ async def get_cloned_served_users_count(bot_id: int) -> int:
     """Returns the count of served users for a specific cloned bot."""
     return await cloned_users_db.count_documents({"bot_id": bot_id})
 
+async def get_main_bot_served_chats() -> List[int]:
+    """Retrieves all served group chats explicitly for the main bot by filtering out any chats registered to active clones."""
+    from SONALI_MUSIC.utils.database import get_served_chats
+    served_chats = await get_served_chats()
+    main_chats = [int(chat["chat_id"]) for chat in served_chats]
+
+    clones = await get_all_clones()
+    clone_chats = set()
+    for clone in clones:
+        if clone.get("status") == "active":
+            bot_id = clone.get("bot_id")
+            chats = await get_cloned_served_chats(bot_id)
+            for c in chats:
+                clone_chats.add(int(c))
+
+    return [c for c in main_chats if c not in clone_chats]
+
+async def get_main_bot_served_users() -> List[int]:
+    """Retrieves all served private users explicitly for the main bot by filtering out any users registered to active clones."""
+    from SONALI_MUSIC.utils.database import get_served_users
+    served_users = await get_served_users()
+    main_users = [int(user["user_id"]) for user in served_users]
+
+    clones = await get_all_clones()
+    clone_users = set()
+    for clone in clones:
+        if clone.get("status") == "active":
+            bot_id = clone.get("bot_id")
+            users = await get_cloned_served_users(bot_id)
+            for u in users:
+                clone_users.add(int(u))
+
+    return [u for u in main_users if u not in clone_users]
+
 async def get_custom_play_metadata(
     bot_id: int,
     title: str,

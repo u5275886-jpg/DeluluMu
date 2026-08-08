@@ -113,12 +113,13 @@ async def braodcast_message(client, message, _):
 
     if is_owner:
         # Platform Owner / Supreme Admin context: Broadcast to EVERYTHING!
-        # 1. Main bot chats and users
-        main_chats = [int(chat["chat_id"]) for chat in await get_served_chats()]
+        # 1. Main bot chats and users (isolated to avoid invalid peer/channel errors)
+        from SONALI_MUSIC.utils.database_clone import get_main_bot_served_chats, get_main_bot_served_users
+        main_chats = await get_main_bot_served_chats()
         for c in main_chats:
             chats_targets.append((app, c))
 
-        main_users = [int(user["user_id"]) for user in await get_served_users()]
+        main_users = await get_main_bot_served_users()
         for u in main_users:
             users_targets.append((app, u))
 
@@ -142,12 +143,13 @@ async def braodcast_message(client, message, _):
         for u in cloned_users:
             users_targets.append((clone, u))
     else:
-        # Main bot sudoer context
-        main_chats = [int(chat["chat_id"]) for chat in await get_served_chats()]
+        # Main bot sudoer context (isolated to avoid invalid peer/channel errors)
+        from SONALI_MUSIC.utils.database_clone import get_main_bot_served_chats, get_main_bot_served_users
+        main_chats = await get_main_bot_served_chats()
         for c in main_chats:
             chats_targets.append((app, c))
 
-        main_users = [int(user["user_id"]) for user in await get_served_users()]
+        main_users = await get_main_bot_served_users()
         for u in main_users:
             users_targets.append((app, u))
 
