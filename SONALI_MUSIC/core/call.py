@@ -9,6 +9,21 @@ from pyrogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 from pytgcalls import PyTgCalls, exceptions, types
 from pytgcalls.pytgcalls_session import PyTgCallsSession
 
+# Ensure pytgcalls.types has MediaStream (handles mismatched or custom pytgcalls installs gracefully)
+if not hasattr(types, "MediaStream"):
+    try:
+        from pytgcalls.types.stream import MediaStream
+        types.MediaStream = MediaStream
+    except ImportError:
+        raise ImportError(
+            "\n\n❌ [CRITICAL ERROR] The installed 'pytgcalls' package does not have 'MediaStream'.\n"
+            "This usually happens when you have installed the wrong or deprecated 'pytgcalls' package\n"
+            "instead of 'py-tgcalls'.\n\n"
+            "👉 Please fix this by running:\n"
+            "   pip uninstall pytgcalls py-tgcalls\n"
+            "   pip install py-tgcalls==2.2.11\n"
+        )
+
 import config
 from SONALI_MUSIC import LOGGER, YouTube, app
 from SONALI_MUSIC.misc import db
