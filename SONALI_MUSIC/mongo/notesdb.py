@@ -2,7 +2,7 @@ from SONALI_MUSIC.utils.mongo import db
 
 #from SONALI_MUSIC.mongo import *# back...............
 
-notes = db.notes["notes"]
+notes = db.notes
 
 
 async def SaveNote(chat_id, note_name, content, text, data_type):

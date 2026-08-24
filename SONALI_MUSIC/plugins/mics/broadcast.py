@@ -337,4 +337,7 @@ async def auto_clean():
             continue
 
 
-asyncio.create_task(auto_clean())
+try:
+    asyncio.create_task(auto_clean())
+except RuntimeError:
+    pass

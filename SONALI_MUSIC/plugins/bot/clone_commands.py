@@ -5,7 +5,8 @@ from pyrogram.types import Message, InlineKeyboardButton, InlineKeyboardMarkup
 
 import config
 from SONALI_MUSIC import app
-from SONALI_MUSIC.misc import BANNED_USERS, SUDOERS
+from config import BANNED_USERS
+from SONALI_MUSIC.misc import SUDOERS
 from SONALI_MUSIC.clone_system.validators import validate_bot_token, mask_token, sanitize_text
 from SONALI_MUSIC.clone_system.lifecycle import clone_lifecycle
 from SONALI_MUSIC.clone_system.registry import clone_registry
