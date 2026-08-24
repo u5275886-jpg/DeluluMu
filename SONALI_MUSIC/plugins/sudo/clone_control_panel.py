@@ -2,7 +2,8 @@ from pyrogram import filters
 from pyrogram.types import Message, InlineKeyboardButton, InlineKeyboardMarkup, CallbackQuery
 
 import config
-from SONALI_MUSIC import app, SUDOERS
+from SONALI_MUSIC import app
+from SONALI_MUSIC.misc import SUDOERS
 from SONALI_MUSIC.utils.permissions import is_sudo
 from SONALI_MUSIC.clone_system.manager import clone_sys_manager
 
