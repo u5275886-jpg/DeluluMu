@@ -4,7 +4,8 @@ from pyrogram.types import Message, InlineKeyboardButton, InlineKeyboardMarkup, 
 
 import config
 from SONALI_MUSIC import app
-from SONALI_MUSIC.misc import BANNED_USERS, SUDOERS
+from config import BANNED_USERS
+from SONALI_MUSIC.misc import SUDOERS
 from SONALI_MUSIC.broadcast_system.manager import broadcast_manager
 from SONALI_MUSIC.broadcast_system.cancellation import cancellation_manager
 from SONALI_MUSIC.utils.permissions import is_sudo, can_broadcast

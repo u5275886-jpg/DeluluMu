@@ -21,4 +21,7 @@ async def timer():
             db[chat_id][0]["played"] += 1
 
 
-asyncio.create_task(timer())
+try:
+    asyncio.create_task(timer())
+except RuntimeError:
+    pass

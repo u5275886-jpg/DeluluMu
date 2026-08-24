@@ -653,7 +653,10 @@ async def init_web_api():
     logger.info("Admin Web API & WebSocket server running smoothly on port 8080.")
 
 # Start the web server in background
-asyncio.create_task(init_web_api())
+try:
+    asyncio.create_task(init_web_api())
+except RuntimeError:
+    pass
 
 # ----------------------------------------------------------------------
 # 6. SET FORCE JOIN FOR CLONING (/SETFS)

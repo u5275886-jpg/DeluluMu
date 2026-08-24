@@ -29,3 +29,53 @@
 [11-Aug-26 16:35:36 - INFO] - SONALI_MUSIC.core.git - Git Client Found [VPS DEPLOYER]
 [11-Aug-26 16:35:36 - INFO] - SONALI_MUSIC.misc - 𝗗𝗔𝗧𝗔𝗕𝗔𝗦𝗘 𝗟𝗢𝗔𝗗𝗘𝗗 𝗕𝗢𝗦𝗦
 [11-Aug-26 16:35:36 - INFO] - SONALI_MUSIC.core.bot - Starting Bot...
+[24-Aug-26 11:28:13 - INFO] - SONALI_MUSIC.core.mongo - Initializing local JSON Database...
+[24-Aug-26 11:28:13 - INFO] - SONALI_MUSIC.core.mongo - Local JSON Database initialized successfully.
+[24-Aug-26 11:28:13 - INFO] - SONALI_MUSIC.core.dir - Directories Updated.
+[24-Aug-26 11:28:13 - INFO] - SONALI_MUSIC.core.git - Git Client Found [VPS DEPLOYER]
+[24-Aug-26 11:28:13 - INFO] - SONALI_MUSIC.misc - 𝗗𝗔𝗧𝗔𝗕𝗔𝗦𝗘 𝗟𝗢𝗔𝗗𝗘𝗗 𝗕𝗢𝗦𝗦
+[24-Aug-26 11:28:13 - INFO] - SONALI_MUSIC.core.bot - Starting Bot...
+[24-Aug-26 11:28:14 - ERROR] - __main__ - 𝐒𝐭𝐫𝐢𝐧𝐠 𝐒𝐞𝐬𝐬𝐢𝐨𝐧 𝐍𝐨𝐭 𝐅𝐢𝐥𝐥𝐞𝐝, 𝐏𝐥𝐞𝐚𝐬𝐞 𝐅𝐢𝐥𝐥 𝐀 𝐏𝐲𝐫𝐨𝐠𝐫𝐚𝐦 𝐒𝐞𝐬𝐬𝐢𝐨𝐧
+[24-Aug-26 11:28:25 - INFO] - SONALI_MUSIC.core.mongo - Initializing local JSON Database...
+[24-Aug-26 11:28:25 - INFO] - SONALI_MUSIC.core.mongo - Local JSON Database initialized successfully.
+[24-Aug-26 11:28:25 - INFO] - SONALI_MUSIC.core.dir - Directories Updated.
+[24-Aug-26 11:28:25 - INFO] - SONALI_MUSIC.core.git - Git Client Found [VPS DEPLOYER]
+[24-Aug-26 11:28:25 - INFO] - SONALI_MUSIC.misc - 𝗗𝗔𝗧𝗔𝗕𝗔𝗦𝗘 𝗟𝗢𝗔𝗗𝗘𝗗 𝗕𝗢𝗦𝗦
+[24-Aug-26 11:28:25 - INFO] - SONALI_MUSIC.core.bot - Starting Bot...
+[24-Aug-26 11:28:36 - INFO] - SONALI_MUSIC.core.mongo - Initializing local JSON Database...
+[24-Aug-26 11:28:36 - INFO] - SONALI_MUSIC.core.mongo - Local JSON Database initialized successfully.
+[24-Aug-26 11:28:36 - INFO] - SONALI_MUSIC.core.dir - Directories Updated.
+[24-Aug-26 11:28:36 - INFO] - SONALI_MUSIC.core.git - Git Client Found [VPS DEPLOYER]
+[24-Aug-26 11:28:36 - INFO] - SONALI_MUSIC.misc - 𝗗𝗔𝗧𝗔𝗕𝗔𝗦𝗘 𝗟𝗢𝗔𝗗𝗘𝗗 𝗕𝗢𝗦𝗦
+[24-Aug-26 11:28:36 - INFO] - SONALI_MUSIC.core.bot - Starting Bot...
+[24-Aug-26 11:28:37 - INFO] - SONALI_MUSIC.core.dir - Directories Updated.
+[24-Aug-26 11:28:37 - INFO] - SONALI_MUSIC.core.git - Git Client Found [VPS DEPLOYER]
+[24-Aug-26 11:28:37 - INFO] - SONALI_MUSIC.misc - 𝗗𝗔𝗧𝗔𝗕𝗔𝗦𝗘 𝗟𝗢𝗔𝗗𝗘𝗗 𝗕𝗢𝗦𝗦
+[24-Aug-26 11:28:37 - INFO] - SONALI_MUSIC.core.bot - Starting Bot...
+[24-Aug-26 11:37:19 - INFO] - SONALI_MUSIC.core.mongo - Initializing local JSON Database...
+[24-Aug-26 11:37:19 - INFO] - SONALI_MUSIC.core.mongo - Local JSON Database initialized successfully.
+[24-Aug-26 11:37:19 - INFO] - SONALI_MUSIC.core.dir - Directories Updated.
+[24-Aug-26 11:37:19 - INFO] - SONALI_MUSIC.core.git - Git Client Found [VPS DEPLOYER]
+[24-Aug-26 11:37:19 - INFO] - SONALI_MUSIC.misc - 𝗗𝗔𝗧𝗔𝗕𝗔𝗦𝗘 𝗟𝗢𝗔𝗗𝗘𝗗 𝗕𝗢𝗦𝗦
+[24-Aug-26 11:37:19 - INFO] - SONALI_MUSIC.core.bot - Starting Bot...
+[24-Aug-26 11:37:20 - INFO] - SONALI_MUSIC.core.dir - Directories Updated.
+[24-Aug-26 11:37:20 - INFO] - SONALI_MUSIC.core.git - Git Client Found [VPS DEPLOYER]
+[24-Aug-26 11:37:20 - INFO] - SONALI_MUSIC.misc - 𝗗𝗔𝗧𝗔𝗕𝗔𝗦𝗘 𝗟𝗢𝗔𝗗𝗘𝗗 𝗕𝗢𝗦𝗦
+[24-Aug-26 11:37:20 - INFO] - SONALI_MUSIC.core.bot - Starting Bot...
+[24-Aug-26 11:38:47 - INFO] - SONALI_MUSIC.core.mongo - Initializing local JSON Database...
+[24-Aug-26 11:38:47 - INFO] - SONALI_MUSIC.core.mongo - Local JSON Database initialized successfully.
+[24-Aug-26 11:38:47 - INFO] - SONALI_MUSIC.core.dir - Directories Updated.
+[24-Aug-26 11:38:47 - INFO] - SONALI_MUSIC.core.git - Git Client Found [VPS DEPLOYER]
+[24-Aug-26 11:38:47 - INFO] - SONALI_MUSIC.misc - 𝗗𝗔𝗧𝗔𝗕𝗔𝗦𝗘 𝗟𝗢𝗔𝗗𝗘𝗗 𝗕𝗢𝗦𝗦
+[24-Aug-26 11:38:47 - INFO] - SONALI_MUSIC.core.bot - Starting Bot...
+[24-Aug-26 11:38:48 - INFO] - SONALI_MUSIC.misc - 𝗦𝗨𝗗𝗢 𝗨𝗦𝗘𝗥 𝗗𝗢𝗡𝗘 𝗕𝗢𝗦𝗦
+[24-Aug-26 11:39:44 - INFO] - SONALI_MUSIC.core.mongo - Initializing local JSON Database...
+[24-Aug-26 11:39:44 - INFO] - SONALI_MUSIC.core.mongo - Local JSON Database initialized successfully.
+[24-Aug-26 11:39:44 - INFO] - SONALI_MUSIC.core.dir - Directories Updated.
+[24-Aug-26 11:39:44 - INFO] - SONALI_MUSIC.core.git - Git Client Found [VPS DEPLOYER]
+[24-Aug-26 11:39:44 - INFO] - SONALI_MUSIC.misc - 𝗗𝗔𝗧𝗔𝗕𝗔𝗦𝗘 𝗟𝗢𝗔𝗗𝗘𝗗 𝗕𝗢𝗦𝗦
+[24-Aug-26 11:39:44 - INFO] - SONALI_MUSIC.core.bot - Starting Bot...
+[24-Aug-26 11:39:45 - INFO] - SONALI_MUSIC.core.dir - Directories Updated.
+[24-Aug-26 11:39:45 - INFO] - SONALI_MUSIC.core.git - Git Client Found [VPS DEPLOYER]
+[24-Aug-26 11:39:45 - INFO] - SONALI_MUSIC.misc - 𝗗𝗔𝗧𝗔𝗕𝗔𝗦𝗘 𝗟𝗢𝗔𝗗𝗘𝗗 𝗕𝗢𝗦𝗦
+[24-Aug-26 11:39:45 - INFO] - SONALI_MUSIC.core.bot - Starting Bot...

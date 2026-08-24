@@ -438,4 +438,7 @@ async def markup_timer():
                 continue
 
 
-asyncio.create_task(markup_timer())
+try:
+    asyncio.create_task(markup_timer())
+except RuntimeError:
+    pass
