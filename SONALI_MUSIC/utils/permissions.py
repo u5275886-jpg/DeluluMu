@@ -115,3 +115,54 @@ def adminsOnly(permission):
         return subFunc2
 
     return subFunc
+
+# ==================== Centralized System Permission Helpers ==================== #
+
+import config
+from SONALI_MUSIC.utils.database_clone import get_supreme_admins, get_clone_by_id
+
+async def is_owner(user_id: int) -> bool:
+    return user_id == config.OWNER_ID
+
+async def is_sudo(user_id: int) -> bool:
+    if user_id == config.OWNER_ID:
+        return True
+    supremes = await get_supreme_admins()
+    if user_id in supremes:
+        return True
+    return user_id in SUDOERS
+
+async def is_admin(chat_id: int, user_id: int) -> bool:
+    if await is_sudo(user_id):
+        return True
+    perms = await member_permissions(chat_id, user_id)
+    return "can_manage_video_chats" in perms or len(perms) > 0
+
+async def is_clone_owner(user_id: int, bot_id: int) -> bool:
+    if user_id == config.OWNER_ID:
+        return True
+    supremes = await get_supreme_admins()
+    if user_id in supremes:
+        return True
+    clone = await get_clone_by_id(bot_id)
+    if clone:
+        tenant_id = clone.get("tenant_id") or clone.get("owner_id")
+        return tenant_id == user_id
+    return False
+
+async def can_broadcast(user_id: int, bot_id: Optional[int] = None) -> bool:
+    if await is_sudo(user_id):
+        return True
+    if bot_id:
+        return await is_clone_owner(user_id, bot_id)
+    return False
+
+async def can_delete_clone(user_id: int, bot_id: int) -> bool:
+    return await is_clone_owner(user_id, bot_id)
+
+async def can_view_clone_stats(user_id: int, bot_id: Optional[int] = None) -> bool:
+    if await is_sudo(user_id):
+        return True
+    if bot_id:
+        return await is_clone_owner(user_id, bot_id)
+    return False
