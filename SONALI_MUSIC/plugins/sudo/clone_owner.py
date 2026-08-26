@@ -403,6 +403,8 @@ async def broadcast_clones_cmd(client, message: Message):
             bot_id = clone.get("bot_id")
             clone_client = clone_manager.clones.get(bot_id)
             if clone_client:
+                from SONALI_MUSIC.core.clone_manager import current_clone_client
+                token = current_clone_client.set(clone_client)
                 try:
                     await clone_client.send_message(
                         chat_id=clone.get("tenant_id"),
@@ -412,6 +414,8 @@ async def broadcast_clones_cmd(client, message: Message):
                 except Exception as e:
                     logger.error(f"Failed to send broadcast on clone {bot_id}: {e}")
                     fail_count += 1
+                finally:
+                    current_clone_client.reset(token)
                 await asyncio.sleep(0.5)
 
     await status_msg.edit_text(
@@ -459,6 +463,8 @@ async def broadcast_group_all_cmd(client, message: Message):
             chats = await get_cloned_served_chats(bot_id)
 
         for chat_id in chats:
+            from SONALI_MUSIC.core.clone_manager import current_clone_client
+            token = current_clone_client.set(bot_client if bot_client != app else None)
             try:
                 await bot_client.send_message(chat_id, broadcast_text)
                 success_count += 1
@@ -481,6 +487,8 @@ async def broadcast_group_all_cmd(client, message: Message):
             except Exception as e:
                 logger.error(f"Failed to send group broadcast on {bot_name} to chat {chat_id}: {e}")
                 fail_count += 1
+            finally:
+                current_clone_client.reset(token)
             await asyncio.sleep(0.3)
 
     await status_msg.edit_text(
@@ -525,6 +533,8 @@ async def broadcast_private_all_cmd(client, message: Message):
             users = await get_cloned_served_users(bot_id)
 
         for user_id in users:
+            from SONALI_MUSIC.core.clone_manager import current_clone_client
+            token = current_clone_client.set(bot_client if bot_client != app else None)
             try:
                 await bot_client.send_message(user_id, broadcast_text)
                 success_count += 1
@@ -547,6 +557,8 @@ async def broadcast_private_all_cmd(client, message: Message):
             except Exception as e:
                 logger.error(f"Failed to send private broadcast on {bot_name} to user {user_id}: {e}")
                 fail_count += 1
+            finally:
+                current_clone_client.reset(token)
             await asyncio.sleep(0.3)
 
     await status_msg.edit_text(

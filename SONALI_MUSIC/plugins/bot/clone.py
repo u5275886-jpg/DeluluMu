@@ -30,11 +30,7 @@ def to_smallcap(text: str) -> str:
 user_states = {}
 
 async def check_premium_or_owner(user_id: int) -> bool:
-    from SONALI_MUSIC.utils.database_clone import is_supreme_admin
-    if await is_supreme_admin(user_id):
-        return True
-    premium_status = await check_premium_access(user_id)
-    return premium_status.get("has_premium", False)
+    return True
 
 # Reusable detailed control panel
 async def send_bot_details_panel(chat_id, bot_id, reply_to_message_id=None, query=None):
@@ -84,7 +80,7 @@ async def send_bot_details_panel(chat_id, bot_id, reply_to_message_id=None, quer
         ],
         [
             InlineKeyboardButton("🎵 ᴘʟᴀʏ ᴄᴜsᴛᴏᴍɪᴢᴇ", callback_data=f"EDIT_PLAY_CUSTOM_{bot_id}"),
-            InlineKeyboardButton("🔘 ᴍᴀɴᴀɢᴇ ɪɴʟɪɴᴇ ʙᴜᴛᴛᴏɴs", callback_data=f"MANAGE_CUST_BTNS_{bot_id}")
+            InlineKeyboardButton("🔗 sᴇᴛ ʙᴏᴛ ʟɪɴᴋs", callback_data=f"EDIT_LINKS_{bot_id}")
         ],
         [
             InlineKeyboardButton("📝 ᴄʜᴀɴɢᴇ ᴄᴧᴘᴛɪᴏɴs", callback_data=f"EDIT_CAPTIONS_SUB_{bot_id}_1"),
@@ -95,7 +91,6 @@ async def send_bot_details_panel(chat_id, bot_id, reply_to_message_id=None, quer
             InlineKeyboardButton("📝 sᴇᴛ ʟᴏɢ ɢʀᴏᴜᴘ", callback_data=f"EDIT_LOG_GROUP_{bot_id}")
         ],
         [
-            InlineKeyboardButton("📢 ᴀᴅs ᴄᴏɴᴛʀᴏʟ", callback_data=f"TOGGLE_ADS_{bot_id}"),
             InlineKeyboardButton("⚠️ ᴅᴇʟᴇᴛᴇ ᴄʟᴏɴᴇ", callback_data=f"DELETE_CONFIRM_{bot_id}")
         ],
         [
@@ -660,10 +655,7 @@ async def handle_user_input_state(client, message: Message):
     if message.text and message.text.strip().lower() == "/cancel":
         del user_states[user_id]
         await message.reply_text("❌ **Operation cancelled successfully.**")
-        if action.startswith("wait_for_btn_"):
-            await send_custom_buttons_panel(user_id, bot_id)
-        else:
-            await send_bot_details_panel(user_id, bot_id)
+        await send_bot_details_panel(user_id, bot_id)
         return
 
     clone = await get_clone_by_id(bot_id)
@@ -673,109 +665,87 @@ async def handle_user_input_state(client, message: Message):
 
     settings = clone.get("settings", {})
 
-    if action == "wait_for_btn_text":
-        btn_text = message.text.strip()
-        if not btn_text:
-            return await message.reply_text("❌ **Button text cannot be empty! Please send valid text.**")
-        if len(btn_text) > 30:
-            return await message.reply_text("❌ **Button text is too long! Keep it under 30 characters.**")
+    text_val = message.text.strip() if message.text else ""
 
-        user_states[user_id] = {
-            "action": "wait_for_btn_type",
-            "bot_id": bot_id,
-            "btn_text": btn_text
-        }
+    if action == "wait_for_link_channel":
+        if text_val.lower() == "/reset":
+            settings["channel_link"] = None
+            await update_clone_settings(bot_id, settings)
+            user_states.pop(user_id, None)
+            await message.reply_text("🔄 Update channel link reset to default!")
+            return await send_bot_details_panel(user_id, bot_id)
 
-        buttons = [
-            [
-                InlineKeyboardButton("🔗 ʟɪɴᴋ (ᴜʀʟ)", callback_data=f"CHOOSE_BTN_TYPE_url"),
-                InlineKeyboardButton("🔔 ᴀʟᴇʀᴛ (ᴘᴏᴘᴜᴘ)", callback_data=f"CHOOSE_BTN_TYPE_alert")
-            ],
-            [
-                InlineKeyboardButton("💬 ᴍᴇssᴀɢᴇ (ʀᴇᴘʟʏ)", callback_data=f"CHOOSE_BTN_TYPE_message")
-            ],
-            [
-                InlineKeyboardButton("❌ ᴄᴀɴᴄᴇʟ", callback_data=f"CANCEL_CUST_BTN_{bot_id}")
-            ]
-        ]
+        link = text_val
+        if link.startswith("@"):
+            link = f"https://t.me/{link[1:]}"
+        elif not link.startswith("http://") and not link.startswith("https://") and not link.startswith("tg://"):
+            link = f"https://{link}"
 
+        settings["channel_link"] = link
+        await update_clone_settings(bot_id, settings)
+        user_states.pop(user_id, None)
+        await message.reply_text(f"✅ Update Channel Link saved: `{link}`")
+        return await send_bot_details_panel(user_id, bot_id)
+
+    elif action == "wait_for_link_support":
+        if text_val.lower() == "/reset":
+            settings["support_link"] = None
+            await update_clone_settings(bot_id, settings)
+            user_states.pop(user_id, None)
+            await message.reply_text("🔄 Support group link reset to default!")
+            return await send_bot_details_panel(user_id, bot_id)
+
+        link = text_val
+        if link.startswith("@"):
+            link = f"https://t.me/{link[1:]}"
+        elif not link.startswith("http://") and not link.startswith("https://") and not link.startswith("tg://"):
+            link = f"https://{link}"
+
+        settings["support_link"] = link
+        await update_clone_settings(bot_id, settings)
+        user_states.pop(user_id, None)
+        await message.reply_text(f"✅ Support Group Link saved: `{link}`")
+        return await send_bot_details_panel(user_id, bot_id)
+
+    elif action == "wait_for_quick_step1":
+        link = text_val
+        if link.startswith("@"):
+            link = f"https://t.me/{link[1:]}"
+        elif not link.startswith("http://") and not link.startswith("https://") and not link.startswith("tg://"):
+            link = f"https://{link}"
+
+        settings["channel_link"] = link
+        await update_clone_settings(bot_id, settings)
+
+        user_states[user_id] = {"action": "wait_for_quick_step2", "bot_id": bot_id}
         await message.reply_text(
-            f"🎯 **Button Text Set:** `{btn_text}`\n\n"
-            f"ᴘʟᴇᴀsᴇ sᴇʟᴇᴄᴛ ᴛʜᴇ **ᴛʏᴘᴇ** of this inline button:",
-            reply_markup=InlineKeyboardMarkup(buttons)
+            f"⚡ **『 ǫᴜɪᴄᴋ ʟɪɴᴋ sᴇᴛᴜᴘ - sᴛᴇᴘ 2/2 』**\n\n"
+            f"✅ Update Channel saved: `{link}`\n\n"
+            f"Now please send your **Support Group link** (e.g. `https://t.me/YourGroup` or `@YourGroup`):\n\n"
+            f"Send `/cancel` to abort."
         )
         return
 
-    elif action == "wait_for_btn_value":
-        btn_value = message.text.strip()
-        btn_text = state["btn_text"]
-        btn_type = state["btn_type"]
+    elif action == "wait_for_quick_step2":
+        link = text_val
+        if link.startswith("@"):
+            link = f"https://t.me/{link[1:]}"
+        elif not link.startswith("http://") and not link.startswith("https://") and not link.startswith("tg://"):
+            link = f"https://{link}"
 
-        if not btn_value:
-            return await message.reply_text("❌ **Value cannot be empty! Please send a valid text.**")
-
-        if btn_type == "url":
-            if not (btn_value.startswith("http://") or btn_value.startswith("https://") or btn_value.startswith("tg://")):
-                return await message.reply_text("❌ **Invalid URL! The link must start with http://, https:// or tg://. Try again:**")
-        elif btn_type == "alert":
-            if len(btn_value) > 200:
-                return await message.reply_text("❌ **Alert text is too long! Keep it under 200 characters. Try again:**")
-
-        custom_buttons = settings.get("custom_buttons", [])
-        custom_buttons.append({
-            "text": btn_text,
-            "type": btn_type,
-            "value": btn_value
-        })
-        settings["custom_buttons"] = custom_buttons
+        settings["support_link"] = link
         await update_clone_settings(bot_id, settings)
-        del user_states[user_id]
+        user_states.pop(user_id, None)
 
         await message.reply_text(
-            f"✅ **Button Added Successfully!**\n\n"
-            f"🏷️ **Text:** `{btn_text}`\n"
-            f"⚙️ **Type:** `{btn_type.upper()}`\n"
-            f"🔗 **Value:** `{btn_value}`"
+            f"🎉 **All Links Configured Successfully!**\n\n"
+            f"📢 Update Channel: `{settings.get('channel_link')}`\n"
+            f"💬 Support Group: `{link}`\n\n"
+            f"Your cloned bot's start panel buttons now point to your links!"
         )
-        await send_custom_buttons_panel(user_id, bot_id)
-        return
+        return await send_bot_details_panel(user_id, bot_id)
 
-    elif action.startswith("wait_for_btn_edit_"):
-        field = action.replace("wait_for_btn_edit_", "")
-        idx = state["btn_idx"]
-        new_val = message.text.strip()
-
-        if not new_val:
-            return await message.reply_text("❌ **Value cannot be empty! Please send a valid text.**")
-
-        custom_buttons = settings.get("custom_buttons", [])
-        if idx >= len(custom_buttons):
-            del user_states[user_id]
-            return await message.reply_text("❌ Button not found. Operation cancelled.")
-
-        if field == "text":
-            if len(new_val) > 30:
-                return await message.reply_text("❌ **Button text is too long! Keep it under 30 characters. Try again:**")
-            custom_buttons[idx]["text"] = new_val
-        else: # value
-            btn_type = custom_buttons[idx].get("type", "url")
-            if btn_type == "url":
-                if not (new_val.startswith("http://") or new_val.startswith("https://") or new_val.startswith("tg://")):
-                    return await message.reply_text("❌ **Invalid URL! The link must start with http://, https:// or tg://. Try again:**")
-            elif btn_type == "alert":
-                if len(new_val) > 200:
-                    return await message.reply_text("❌ **Alert text is too long! Keep it under 200 characters. Try again:**")
-            custom_buttons[idx]["value"] = new_val
-
-        settings["custom_buttons"] = custom_buttons
-        await update_clone_settings(bot_id, settings)
-        del user_states[user_id]
-
-        await message.reply_text(f"✅ **Button {field} updated successfully!**")
-        await send_custom_buttons_panel(user_id, bot_id)
-        return
-
-    if action == "wait_for_title":
+    elif action == "wait_for_title":
         new_title = message.text.strip()
         if not new_title:
             return await message.reply_text("❌ **Title cannot be empty! Please send a valid text.**")
@@ -1096,509 +1066,119 @@ async def edit_play_image_opt_callback(client, query: CallbackQuery):
 # CUSTOM INLINE BUTTONS HELPERS AND CONTROLS
 # ----------------------------------------------------------------------
 
-async def send_custom_buttons_panel(chat_id, bot_id, reply_to_message_id=None, query=None):
+@app.on_callback_query(filters.regex("^EDIT_LINKS_(\\d+)$"))
+async def edit_links_callback(client, query: CallbackQuery):
+    bot_id = int(query.data.split("_")[2])
+    user_id = query.from_user.id
+
     clone = await get_clone_by_id(bot_id)
     if not clone:
-        if query:
-            await query.answer("Clone not found.", show_alert=True)
-        return
+        return await query.answer("Clone not found.", show_alert=True)
+    is_owner = (user_id == config.OWNER_ID)
+    if not is_owner and clone.get("tenant_id") != user_id:
+        return await query.answer("Access Denied.", show_alert=True)
 
-    custom_buttons = clone.get("settings", {}).get("custom_buttons", [])
+    settings = clone.get("settings", {})
+    chan_link = settings.get("channel_link", "Default (Main Channel)")
+    supp_link = settings.get("support_link", "Default (Main Support Chat)")
+
     text = (
-        f"🔘 **『 ᴍᴀɴᴀɢᴇ ɪɴʟɪɴᴇ ʙᴜᴛᴛᴏɴs 』**\n\n"
-        f"ʏᴏᴜ ᴄᴀɴ ᴄᴏɴғɪɢᴜʀᴇ ᴛʜᴇ ʟɪɴᴋs ᴏʀ ᴍᴇssᴀɢᴇs ᴏғ ʏᴏᴜʀ ᴄʟᴏɴᴇᴅ ʙᴏᴛ's ɪɴʟɪɴᴇ ʙᴜᴛᴛᴏɴs ʜᴇʀᴇ!\n\n"
-        f"📋 **ᴄᴜʀʀᴇɴᴛ ʙᴜᴛᴛᴏɴs ({len(custom_buttons)}):**\n"
+        f"🔗 **『 ᴄᴜsᴛᴏᴍɪᴢᴇ ʙᴏᴛ ʟɪɴᴋs 』**\n\n"
+        f"Customize your cloned bot's Update Channel and Support Group links in 1-2 easy steps!\n\n"
+        f"📢 **Update Channel:** `{chan_link}`\n"
+        f"💬 **Support Group:** `{supp_link}`\n\n"
+        f"✨ *Users clicking 'Updates' or 'Support' buttons on your bot will be directed to your custom links!*"
     )
-    if not custom_buttons:
-        text += " └ ❌ *No custom buttons configured. Default panel buttons will be shown.*"
-    else:
-        for idx, btn in enumerate(custom_buttons):
-            b_text = btn.get("text", "Button")
-            b_type = btn.get("type", "url").upper()
-            b_val = btn.get("value", "")
-            if len(b_val) > 40:
-                b_val = b_val[:37] + "..."
-            text += f" {idx+1}. 🏷️ **{b_text}** | ⚙️ **{b_type}**\n   └ 🔗 `{b_val}`\n"
 
     buttons = [
         [
-            InlineKeyboardButton("➕ ᴧᴅᴅ ʙᴜᴛᴛση", callback_data=f"ADD_CUST_BTN_{bot_id}"),
-            InlineKeyboardButton("✏️ єᴅɪᴛ ʙᴜᴛᴛση", callback_data=f"EDIT_CUST_BTN_{bot_id}"),
+            InlineKeyboardButton("📢 sᴇᴛ ᴜᴘᴅᴧᴛᴇ ᴄʜᴧɴɴᴇʟ", callback_data=f"SET_LINK_CHAN_{bot_id}"),
+            InlineKeyboardButton("💬 sᴇᴛ sᴜᴘᴘᴏʀᴛ ɢʀᴏᴜᴘ", callback_data=f"SET_LINK_SUPP_{bot_id}")
         ],
         [
-            InlineKeyboardButton("✨ ʟσᴧᴅ ᴅєғᴧᴜʟᴛ ᴛєᴍᴘʟᴧᴛє", callback_data=f"LOAD_DEFAULT_TEMPLATE_{bot_id}")
+            InlineKeyboardButton("⚡ ǫᴜɪᴄᴋ 2-sᴛᴇᴘ sᴇᴛᴜᴘ", callback_data=f"SET_LINK_QUICK_{bot_id}")
         ],
         [
-            InlineKeyboardButton("🔄 ʀєsєᴛ ᴛσ ɪηнєʀɪᴛ", callback_data=f"RESET_CUST_BTN_{bot_id}")
-        ],
-        [
+            InlineKeyboardButton("🔄 ʀᴇsᴇᴛ ʟɪɴᴋs", callback_data=f"SET_LINK_RESET_{bot_id}"),
             InlineKeyboardButton("🔙 ʙᴧᴄᴋ", callback_data=f"MANAGE_BOT_{bot_id}")
         ]
     ]
-    markup = InlineKeyboardMarkup(buttons)
-    if query:
-        await query.message.edit_text(text, reply_markup=markup, disable_web_page_preview=True)
-    else:
-        await app.send_message(chat_id, text, reply_markup=markup, reply_to_message_id=reply_to_message_id, disable_web_page_preview=True)
 
-
-@app.on_callback_query(filters.regex("^MANAGE_CUST_BTNS_(\\d+)$"))
-async def manage_custom_buttons_callback(client, query: CallbackQuery):
-    bot_id = int(query.data.split("_")[3])
-    user_id = query.from_user.id
-
-    clone = await get_clone_by_id(bot_id)
-    if not clone:
-        return await query.answer("Clone not found.", show_alert=True)
-    is_owner = (user_id == config.OWNER_ID)
-    if not is_owner and clone.get("tenant_id") != user_id:
-        return await query.answer("Access Denied.", show_alert=True)
-
-    await send_custom_buttons_panel(user_id, bot_id, query=query)
-
-
-
-
-@app.on_callback_query(filters.regex("^CHOOSE_BTN_TYPE_(url|alert|message)$"))
-async def choose_button_type_callback(client, query: CallbackQuery):
-    user_id = query.from_user.id
-    state = user_states.get(user_id)
-    if not state or state.get("action") != "wait_for_btn_type":
-        return await query.answer("Session expired or invalid.", show_alert=True)
-
-    btn_type = query.data.split("_")[3]
-    bot_id = state["bot_id"]
-    btn_text = state["btn_text"]
-
-    user_states[user_id] = {
-        "action": "wait_for_btn_value",
-        "bot_id": bot_id,
-        "btn_text": btn_text,
-        "btn_type": btn_type
-    }
-
-    if btn_type == "url":
-        prompt = (
-            f"🔗 **『 sᴇᴛ ʙᴜᴛᴛᴏɴ ʟɪɴᴋ 』**\n\n"
-            f"Button Text: `{btn_text}`\n"
-            f"Button Type: `LINK (URL)`\n\n"
-            f"ᴘʟᴇᴀsᴇ sᴇɴᴅ ᴛʜᴇ **ᴜʀʟ** (link) that this button should open when clicked:\n"
-            f"*(e.g., https://t.me/your_channel)*"
-        )
-    elif btn_type == "alert":
-        prompt = (
-            f"🔔 **『 sᴇᴛ ʙᴜᴛᴛᴏɴ ᴀʟᴇʀᴛ ᴍᴇssᴀɢᴇ 』**\n\n"
-            f"Button Text: `{btn_text}`\n"
-            f"Button Type: `ALERT (POPUP)`\n\n"
-            f"ᴘʟᴇᴀsᴇ sᴇɴᴅ ᴛʜᴇ **ᴀʟᴇʀᴛ ᴍᴇssᴀɢᴇ** (up to 200 chars) that should pop up when clicked:\n"
-            f"*(Send /cancel to cancel this operation)*"
-        )
-    else:
-        prompt = (
-            f"💬 **『 sᴇᴛ ʙᴜᴛᴛᴏɴ ʀᴇᴘʟʏ ᴍᴇssᴀɢᴇ 』**\n\n"
-            f"Button Text: `{btn_text}`\n"
-            f"Button Type: `MESSAGE (REPLY)`\n\n"
-            f"ᴘʟᴇᴀsᴇ sᴇɴᴅ ᴛʜᴇ **ᴍᴇssᴀɢᴇ ᴛᴇxᴛ** that the bot should reply when clicked:\n"
-            f"*(Send /cancel to cancel this operation)*"
-        )
-
-    await query.message.reply_text(prompt)
+    await query.message.edit_text(text, reply_markup=InlineKeyboardMarkup(buttons))
     await query.answer()
 
 
-
-
-@app.on_callback_query(filters.regex("^ADD_CUST_BTN_(\\d+)$"))
-async def add_custom_button_init_callback(client, query: CallbackQuery):
+@app.on_callback_query(filters.regex("^SET_LINK_CHAN_(\\d+)$"))
+async def set_link_chan_callback(client, query: CallbackQuery):
     bot_id = int(query.data.split("_")[3])
     user_id = query.from_user.id
 
     clone = await get_clone_by_id(bot_id)
     if not clone:
         return await query.answer("Clone not found.", show_alert=True)
-    is_owner = (user_id == config.OWNER_ID)
-    if not is_owner and clone.get("tenant_id") != user_id:
-        return await query.answer("Access Denied.", show_alert=True)
 
-    user_states[user_id] = {"action": "wait_for_btn_text", "bot_id": bot_id}
+    user_states[user_id] = {"action": "wait_for_link_channel", "bot_id": bot_id}
     await query.message.reply_text(
-        f"➕ **『 ᴀᴅᴅ ᴄᴜsᴛᴏᴍ ɪɴʟɪɴᴇ ʙᴜᴛᴛᴏɴ 』**\n\n"
-        f"ᴘʟᴇᴀsᴇ sᴇɴᴅ ᴛʜᴇ **ᴛᴇxᴛ** (label) for the new button (e.g. `Join Channel`):\n\n"
-        f"*(Send /cancel to cancel this operation)*"
+        f"📢 **『 sᴇᴛ ᴜᴘᴅᴧᴛᴇ ᴄʜᴧɴɴᴇʟ ʟɪɴᴋ 』**\n\n"
+        f"Please send your **Update Channel link** (e.g. `https://t.me/YourChannel` or `@YourChannel`):\n\n"
+        f"Send `/cancel` to abort or `/reset` to restore default."
     )
     await query.answer()
 
 
-@app.on_callback_query(filters.regex("^EDIT_CUST_BTN_(\\d+)$"))
-async def edit_custom_buttons_list_callback(client, query: CallbackQuery):
+@app.on_callback_query(filters.regex("^SET_LINK_SUPP_(\\d+)$"))
+async def set_link_supp_callback(client, query: CallbackQuery):
     bot_id = int(query.data.split("_")[3])
     user_id = query.from_user.id
 
     clone = await get_clone_by_id(bot_id)
     if not clone:
         return await query.answer("Clone not found.", show_alert=True)
-    is_owner = (user_id == config.OWNER_ID)
-    if not is_owner and clone.get("tenant_id") != user_id:
-        return await query.answer("Access Denied.", show_alert=True)
 
-    custom_buttons = clone.get("settings", {}).get("custom_buttons", [])
-    if not custom_buttons:
-        return await query.answer("❌ No custom buttons to edit.", show_alert=True)
-
-    text = (
-        f"✏️ **『 ᴇᴅɪᴛ ᴄᴜsᴛᴏᴍ ʙᴜᴛᴛᴏɴ 』**\n\n"
-        f"sᴇʟᴇᴄᴛ ᴛʜᴇ ʙᴜᴛᴛᴏɴ ʏᴏᴜ ᴡᴀɴᴛ ᴛᴏ edit:"
+    user_states[user_id] = {"action": "wait_for_link_support", "bot_id": bot_id}
+    await query.message.reply_text(
+        f"💬 **『 sᴇᴛ sᴜᴘᴘᴏʀᴛ ɢʀᴏᴜᴘ ʟɪɴᴋ 』**\n\n"
+        f"Please send your **Support Group link** (e.g. `https://t.me/YourGroup` or `@YourGroup`):\n\n"
+        f"Send `/cancel` to abort or `/reset` to restore default."
     )
-
-    buttons = []
-    for idx, btn in enumerate(custom_buttons):
-        buttons.append([
-            InlineKeyboardButton(f"✏️ {btn.get('text')}", callback_data=f"SELECT_EDIT_CUST_BTN_{bot_id}_{idx}")
-        ])
-    buttons.append([InlineKeyboardButton("🔙 ʙᴀᴄᴋ", callback_data=f"MANAGE_CUST_BTNS_{bot_id}")])
-
-    await query.message.edit_text(text, reply_markup=InlineKeyboardMarkup(buttons))
     await query.answer()
 
 
-@app.on_callback_query(filters.regex("^SELECT_EDIT_CUST_BTN_(\\d+)_(\\d+)$"))
-async def select_edit_custom_button_callback(client, query: CallbackQuery):
-    parts = query.data.split("_")
-    bot_id = int(parts[4])
-    idx = int(parts[5])
-    user_id = query.from_user.id
-
-    clone = await get_clone_by_id(bot_id)
-    if not clone:
-        return await query.answer("Clone not found.", show_alert=True)
-    is_owner = (user_id == config.OWNER_ID)
-    if not is_owner and clone.get("tenant_id") != user_id:
-        return await query.answer("Access Denied.", show_alert=True)
-
-    custom_buttons = clone.get("settings", {}).get("custom_buttons", [])
-    if idx >= len(custom_buttons):
-        return await query.answer("Button not found.", show_alert=True)
-
-    btn = custom_buttons[idx]
-    text = (
-        f"✏️ **『 ᴍᴏᴅɪғʏ ʙᴜᴛᴛᴏɴ 』**\n\n"
-        f"🏷️ **Current Text:** `{btn.get('text')}`\n"
-        f"⚙️ **Current Type:** `{btn.get('type').upper()}`\n"
-        f"🔗 **Current Value:** `{btn.get('value')}`\n\n"
-        f"ᴡʜᴀᴛ ᴡᴏᴜʟᴅ ʏᴏᴜ ʟɪᴋᴇ ᴛᴏ ᴇᴅɪᴛ?"
-    )
-
-    buttons = [
-        [
-            InlineKeyboardButton("🏷️ ᴇᴅɪᴛ ᴛᴇxᴛ", callback_data=f"FIELD_EDIT_CUST_BTN_{bot_id}_{idx}_text"),
-            InlineKeyboardButton("⚙️ ᴇᴅɪᴛ ᴛʏᴘᴇ", callback_data=f"FIELD_EDIT_CUST_BTN_{bot_id}_{idx}_type")
-        ],
-        [
-            InlineKeyboardButton("🔗 ᴇᴅɪᴛ ᴠᴀʟᴜᴇ", callback_data=f"FIELD_EDIT_CUST_BTN_{bot_id}_{idx}_value"),
-            InlineKeyboardButton("🗑️ ᴅᴇʟᴇᴛᴇ ʙᴜᴛᴛᴏɴ", callback_data=f"DELETE_CUST_BTN_{bot_id}_{idx}")
-        ],
-        [
-            InlineKeyboardButton("🔙 ʙᴀᴄᴋ", callback_data=f"EDIT_CUST_BTN_{bot_id}")
-        ]
-    ]
-
-    await query.message.edit_text(text, reply_markup=InlineKeyboardMarkup(buttons))
-    await query.answer()
-
-
-@app.on_callback_query(filters.regex("^DELETE_CUST_BTN_(\\d+)_(\\d+)$"))
-async def delete_custom_button_callback(client, query: CallbackQuery):
-    parts = query.data.split("_")
-    bot_id = int(parts[3])
-    idx = int(parts[4])
-    user_id = query.from_user.id
-
-    clone = await get_clone_by_id(bot_id)
-    if not clone:
-        return await query.answer("Clone not found.", show_alert=True)
-    is_owner = (user_id == config.OWNER_ID)
-    if not is_owner and clone.get("tenant_id") != user_id:
-        return await query.answer("Access Denied.", show_alert=True)
-
-    settings = clone.get("settings", {})
-    custom_buttons = settings.get("custom_buttons", [])
-    if idx < len(custom_buttons):
-        deleted_btn = custom_buttons.pop(idx)
-        settings["custom_buttons"] = custom_buttons
-        await update_clone_settings(bot_id, settings)
-        await query.answer(f"🗑️ Deleted button: {deleted_btn.get('text')}", show_alert=True)
-    else:
-        await query.answer("❌ Button not found.", show_alert=True)
-
-    await send_custom_buttons_panel(user_id, bot_id, query=query)
-
-
-@app.on_callback_query(filters.regex("^FIELD_EDIT_CUST_BTN_(\\d+)_(\\d+)_(text|type|value)$"))
-async def field_edit_custom_button_callback(client, query: CallbackQuery):
-    parts = query.data.split("_")
-    bot_id = int(parts[4])
-    idx = int(parts[5])
-    field = parts[6]
-    user_id = query.from_user.id
-
-    clone = await get_clone_by_id(bot_id)
-    if not clone:
-        return await query.answer("Clone not found.", show_alert=True)
-    is_owner = (user_id == config.OWNER_ID)
-    if not is_owner and clone.get("tenant_id") != user_id:
-        return await query.answer("Access Denied.", show_alert=True)
-
-    custom_buttons = clone.get("settings", {}).get("custom_buttons", [])
-    if idx >= len(custom_buttons):
-        return await query.answer("Button not found.", show_alert=True)
-
-    btn = custom_buttons[idx]
-
-    if field == "type":
-        buttons = [
-            [
-                InlineKeyboardButton("🔗 ʟɪɴᴋ (ᴜʀʟ)", callback_data=f"SAVE_EDIT_CUST_BTN_TYPE_{bot_id}_{idx}_url"),
-                InlineKeyboardButton("🔔 ᴀʟᴇʀᴛ (ᴘᴏᴘᴜᴘ)", callback_data=f"SAVE_EDIT_CUST_BTN_TYPE_{bot_id}_{idx}_alert")
-            ],
-            [
-                InlineKeyboardButton("💬 ᴍᴇssᴀɢᴇ (ʀᴇᴘʟʏ)", callback_data=f"SAVE_EDIT_CUST_BTN_TYPE_{bot_id}_{idx}_message")
-            ],
-            [
-                InlineKeyboardButton("🔙 ʙᴀᴄᴋ", callback_data=f"SELECT_EDIT_CUST_BTN_{bot_id}_{idx}")
-            ]
-        ]
-        await query.message.edit_text(
-            f"⚙️ **『 ᴄʜᴀɴɢᴇ ʙᴜᴛᴛᴏɴ ᴛʏᴘᴇ 』**\n\n"
-            f"Button Text: `{btn.get('text')}`\n"
-            f"Current Type: `{btn.get('type').upper()}`\n\n"
-            f"sᴇʟᴇᴄᴛ ᴛʜᴇ ɴᴇᴡ **ᴛʏᴘᴇ** for this button:",
-            reply_markup=InlineKeyboardMarkup(buttons)
-        )
-        await query.answer()
-        return
-
-    # For text and value, set user state to wait for text input
-    user_states[user_id] = {
-        "action": f"wait_for_btn_edit_{field}",
-        "bot_id": bot_id,
-        "btn_idx": idx
-    }
-
-    if field == "text":
-        prompt = (
-            f"✏️ **『 ᴇᴅɪᴛ ʙᴜᴛᴛᴏɴ ᴛᴇxᴛ 』**\n\n"
-            f"Current Text: `{btn.get('text')}`\n\n"
-            f"ᴘʟᴇᴀsᴇ sᴇɴᴅ ᴛʜᴇ ɴᴇᴡ **ᴛᴇxᴛ** (label) for this button:\n"
-            f"*(Send /cancel to cancel this operation)*"
-        )
-    else:  # value
-        btn_type = btn.get('type')
-        if btn_type == "url":
-            prompt = (
-                f"🔗 **『 ᴇᴅɪᴛ ʙᴜᴛᴛᴏɴ ʟɪɴᴋ 』**\n\n"
-                f"Current URL: `{btn.get('value')}`\n\n"
-                f"ᴘʟᴇᴀsᴇ sᴇɴᴅ ᴛʜᴇ ɴᴇᴡ **ᴜʀʟ** (link) starting with http://, https:// or tg://:\n"
-                f"*(Send /cancel to cancel this operation)*"
-            )
-        elif btn_type == "alert":
-            prompt = (
-                f"🔔 **『 ᴇᴅɪᴛ ʙᴜᴛᴛᴏɴ ᴀʟᴇʀᴛ 』**\n\n"
-                f"Current Alert: `{btn.get('value')}`\n\n"
-                f"ᴘʟᴇᴀsᴇ sᴇɴᴅ ᴛʜᴇ ɴᴇᴡ **ᴀʟᴇʀᴛ ᴍᴇssᴀɢᴇ** (up to 200 chars):\n"
-                f"*(Send /cancel to cancel this operation)*"
-            )
-        else:
-            prompt = (
-                f"💬 **『 ᴇᴅɪᴛ ʙᴜᴛᴛᴏɴ ʀᴇᴘʟʏ 』**\n\n"
-                f"Current Reply: `{btn.get('value')}`\n\n"
-                f"ᴘʟᴇᴀsᴇ sᴇɴᴅ ᴛʜᴇ ɴᴇᴡ **ᴍᴇssᴀɢᴇ ᴛᴇxᴛ**:\n"
-                f"*(Send /cancel to cancel this operation)*"
-            )
-
-    await query.message.reply_text(prompt)
-    await query.answer()
-
-
-@app.on_callback_query(filters.regex("^SAVE_EDIT_CUST_BTN_TYPE_(\\d+)_(\\d+)_(url|alert|message)$"))
-async def save_edit_custom_button_type_callback(client, query: CallbackQuery):
-    parts = query.data.split("_")
-    bot_id = int(parts[5])
-    idx = int(parts[6])
-    new_type = parts[7]
-    user_id = query.from_user.id
-
-    clone = await get_clone_by_id(bot_id)
-    if not clone:
-        return await query.answer("Clone not found.", show_alert=True)
-    is_owner = (user_id == config.OWNER_ID)
-    if not is_owner and clone.get("tenant_id") != user_id:
-        return await query.answer("Access Denied.", show_alert=True)
-
-    settings = clone.get("settings", {})
-    custom_buttons = settings.get("custom_buttons", [])
-    if idx < len(custom_buttons):
-        custom_buttons[idx]["type"] = new_type
-        settings["custom_buttons"] = custom_buttons
-        await update_clone_settings(bot_id, settings)
-        await query.answer("✅ Button type updated successfully!", show_alert=True)
-    else:
-        await query.answer("❌ Button not found.", show_alert=True)
-
-    await select_edit_custom_button_callback(client, query)
-
-
-@app.on_callback_query(filters.regex("^LOAD_DEFAULT_TEMPLATE_(\\d+)$"))
-async def load_default_template_callback(client, query: CallbackQuery):
+@app.on_callback_query(filters.regex("^SET_LINK_QUICK_(\\d+)$"))
+async def set_link_quick_callback(client, query: CallbackQuery):
     bot_id = int(query.data.split("_")[3])
     user_id = query.from_user.id
 
     clone = await get_clone_by_id(bot_id)
     if not clone:
         return await query.answer("Clone not found.", show_alert=True)
-    is_owner = (user_id == config.OWNER_ID)
-    if not is_owner and clone.get("tenant_id") != user_id:
-        return await query.answer("Access Denied.", show_alert=True)
 
-    bot_username = clone.get("bot_username") or "MusicBot"
-    tenant_username = clone.get("tenant_username")
-    owner_link = f"https://t.me/{tenant_username}" if tenant_username else f"tg://user?id={clone.get('tenant_id')}"
+    user_states[user_id] = {"action": "wait_for_quick_step1", "bot_id": bot_id}
+    await query.message.reply_text(
+        f"⚡ **『 ǫᴜɪᴄᴋ ʟɪɴᴋ sᴇᴛᴜᴘ - sᴛᴇᴘ 1/2 』**\n\n"
+        f"Please send your **Update Channel link** (e.g. `https://t.me/YourChannel` or `@YourChannel`):\n\n"
+        f"Send `/cancel` to abort."
+    )
+    await query.answer()
 
-    # Pre-populate default customizable premium layout template
-    default_template = [
-        {
-            "text": "➕ ᴧᴅᴅ ᴍє ᴛσ ɢʀσυᴘ",
-            "type": "url",
-            "value": f"https://t.me/{bot_username}?startgroup=true"
-        },
-        {
-            "text": "🚀 ᴍɪηɪ ᴧᴘᴘ",
-            "type": "url",
-            "value": "https://music-theta-teal-86.vercel.app/"
-        },
-        {
-            "text": "✨ ᴄσᴍᴍᴧηᴅs",
-            "type": "message",
-            "value": "/help"
-        },
-        {
-            "text": "👑 σωηєʀ",
-            "type": "url",
-            "value": owner_link
-        },
-        {
-            "text": "⌯ ᴧʙσυт ⌯",
-            "type": "message",
-            "value": "/about"
-        }
-    ]
+
+@app.on_callback_query(filters.regex("^SET_LINK_RESET_(\\d+)$"))
+async def set_link_reset_callback(client, query: CallbackQuery):
+    bot_id = int(query.data.split("_")[3])
+    user_id = query.from_user.id
+
+    clone = await get_clone_by_id(bot_id)
+    if not clone:
+        return await query.answer("Clone not found.", show_alert=True)
 
     settings = clone.get("settings", {})
-    settings["custom_buttons"] = default_template
+    settings["channel_link"] = None
+    settings["support_link"] = None
     await update_clone_settings(bot_id, settings)
-    await query.answer("✨ Premium Default Customizable Template Loaded successfully!", show_alert=True)
 
-    await send_custom_buttons_panel(user_id, bot_id, query=query)
+    await query.answer("🔄 Links reset to default main bot links!", show_alert=True)
+    await edit_links_callback(client, query)
 
-
-@app.on_callback_query(filters.regex("^RESET_CUST_BTN_(\\d+)$"))
-async def reset_custom_buttons_callback(client, query: CallbackQuery):
-    bot_id = int(query.data.split("_")[3])
-    user_id = query.from_user.id
-
-    clone = await get_clone_by_id(bot_id)
-    if not clone:
-        return await query.answer("Clone not found.", show_alert=True)
-    is_owner = (user_id == config.OWNER_ID)
-    if not is_owner and clone.get("tenant_id") != user_id:
-        return await query.answer("Access Denied.", show_alert=True)
-
-    # Re-initialize to empty to trigger main bot design fallback
-    default_buttons = []
-
-    settings = clone.get("settings", {})
-    settings["custom_buttons"] = default_buttons
-    await update_clone_settings(bot_id, settings)
-    await query.answer("🔄 Custom buttons reset to inherit main bot design!", show_alert=True)
-
-    await send_custom_buttons_panel(user_id, bot_id, query=query)
-
-
-@app.on_callback_query(filters.regex("^CANCEL_CUST_BTN_(\\d+)$"))
-async def cancel_custom_button_callback(client, query: CallbackQuery):
-    bot_id = int(query.data.split("_")[3])
-    user_id = query.from_user.id
-    if user_id in user_states:
-        del user_states[user_id]
-    await query.answer("Operation cancelled.")
-    await send_custom_buttons_panel(user_id, bot_id, query=query)
-
-
-@app.on_callback_query(filters.regex(r"^CLONE_CUST_BTN_(\d+)_(\d+)$"))
-async def custom_button_trigger_callback(client, query: CallbackQuery):
-    bot_id = int(query.data.split("_")[3])
-    btn_idx = int(query.data.split("_")[4])
-
-    clone = await get_clone_by_id(bot_id)
-    if not clone:
-        return await query.answer("Bot settings not found.", show_alert=True)
-
-    custom_buttons = clone.get("settings", {}).get("custom_buttons", [])
-    if btn_idx >= len(custom_buttons):
-        return await query.answer("Button not found.", show_alert=True)
-
-    btn = custom_buttons[btn_idx]
-    b_type = btn.get("type", "url")
-    b_val = btn.get("value", "")
-
-    if b_type == "alert":
-        await query.answer(b_val, show_alert=True)
-    elif b_type == "message":
-        await query.answer()
-        await query.message.reply_text(b_val)
-    else:
-        await query.answer()
-
-
-# ----------------------------------------------------------------------
-# 6. HELP CAPTIONS AND TEXTS CUSTOMIZATION ENGINE
-# ----------------------------------------------------------------------
-
-HELP_KEYS_MAP = {
-    "about": "About / All Bot Text",
-    "main_help": "Main Help Page Text",
-    "help_01": "ChatGPT Help Text",
-    "help_02": "Search Help Text",
-    "help_03": "Whisper/TTS Help Text",
-    "help_04": "Info Help Text",
-    "help_05": "Fonts Help Text",
-    "help_06": "Math Help Text",
-    "help_07": "Tagall Help Text",
-    "help_10": "Stickers Help Text",
-    "help_11": "Fun Help Text",
-    "help_12": "Quotly Help Text",
-    "help_13": "Truth/Dare Help Text",
-    "help_14": "Admin Ban Help Text",
-    "help_24": "Translate Help Text",
-    "help_25": "Github Help Text",
-    "help_26": "Telegraph Help Text",
-    "promotion": "Promotion Page Text",
-    "help_17": "Setup Help Text",
-    "hb1": "Music Admin Help Text",
-    "hb2": "Music Auth Help Text",
-    "hb3": "Music G-Cast Help Text",
-    "hb4": "Music BL-Chat Help Text",
-    "hb5": "Music BL-User Help Text",
-    "hb6": "Music C-Play Help Text",
-    "hb7": "Music G-Ban Help Text",
-    "hb8": "Music Loop Help Text",
-    "hb9": "Music Log Help Text",
-    "hb10": "Music Ping Help Text",
-    "hb11": "Music Play Help Text",
-    "hb12": "Music Shuffle Help Text",
-    "hb13": "Music Seek Help Text",
-    "hb14": "Music Song Help Text",
-    "hb15": "Music Speed Help Text"
-}
 
 @app.on_callback_query(filters.regex("^EDIT_CAPTIONS_SUB_(\\d+)_(\\d+)$"))
 async def edit_captions_sub_callback(client, query: CallbackQuery):
