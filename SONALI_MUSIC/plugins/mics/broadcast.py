@@ -36,8 +36,11 @@ async def send_broadcast_message(client, chat_id, message, query=None, reply_mar
     Sends the broadcast message (either text query or message reply) to chat_id
     using the specified client.
     """
-    if message.reply_to_message:
-        reply = message.reply_to_message
+    from SONALI_MUSIC.core.clone_manager import current_clone_client
+    token = current_clone_client.set(client if client != app else None)
+    try:
+        if message.reply_to_message:
+            reply = message.reply_to_message
         try:
             m = await client.copy_message(
                 chat_id=chat_id,
@@ -67,8 +70,10 @@ async def send_broadcast_message(client, chat_id, message, query=None, reply_mar
                 return await client.send_video_note(chat_id, video_note=reply.video_note.file_id, reply_markup=markup)
             elif reply.text:
                 return await client.send_message(chat_id, text=reply.text, reply_markup=markup)
-    else:
-        return await client.send_message(chat_id, text=query)
+        else:
+            return await client.send_message(chat_id, text=query, reply_markup=reply_markup)
+    finally:
+        current_clone_client.reset(token)
 
 
 @app.on_message(filters.command("broadcast") & SUDOERS)

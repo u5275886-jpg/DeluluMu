@@ -133,7 +133,6 @@ async def save_clone_bot(
         "queue_behavior": "Standard",
         "custom_buttons": [],
         "help_texts": {},
-        "ads_off": False
     }
 
     if settings:
@@ -435,12 +434,7 @@ async def get_custom_play_metadata(
                     .replace("{bot_username}", bot_username)
                 )
 
-            # Contextual Advertising Check
-            ads_off = settings.get("ads_off", False)
-            if not ads_off:
-                from SONALI_MUSIC import app as main_app
-                promo_username = getattr(main_app, "_orig_username", main_app.username) or "MusicBot"
-                play_caption += f"\n\n📢 **[Create Your Own Music Bot](https://t.me/{promo_username})**"
+
 
             return play_img, play_caption
     except Exception as e:
@@ -477,3 +471,45 @@ async def cleanup_stale_user(bot_id: int, user_id: int):
 
     # Also delete from cloned users database
     await cloned_users_db.delete_one({"bot_id": bot_id, "user_id": user_id})
+
+
+
+async def get_clone_links(bot_id: int = None) -> tuple:
+    """
+    Returns (support_chat, support_channel, owner_link) for a given bot_id.
+    If bot_id belongs to a cloned bot, uses its configured support_link and channel_link.
+    """
+    import config
+    default_support = config.SUPPORT_CHAT
+    default_channel = config.SUPPORT_CHANNEL
+    default_owner = f"https://t.me/{config.OWNER_USERNAME}" if config.OWNER_USERNAME else f"tg://user?id={config.OWNER_ID}"
+
+    if not bot_id:
+        return default_support, default_channel, default_owner
+
+    try:
+        from SONALI_MUSIC import app
+        main_bot_id = getattr(app, "_orig_id", app.id)
+        if bot_id == main_bot_id:
+            return default_support, default_channel, default_owner
+
+        clone = await get_clone_by_id(bot_id)
+        if clone:
+            settings = clone.get("settings", {})
+            supp_link = settings.get("support_link") or default_support
+            chan_link = settings.get("channel_link") or default_channel
+
+            tenant_username = clone.get("tenant_username")
+            tenant_id = clone.get("tenant_id")
+            if tenant_username:
+                o_link = f"https://t.me/{tenant_username}"
+            elif tenant_id:
+                o_link = f"tg://user?id={tenant_id}"
+            else:
+                o_link = default_owner
+
+            return supp_link, chan_link, o_link
+    except Exception:
+        pass
+
+    return default_support, default_channel, default_owner
