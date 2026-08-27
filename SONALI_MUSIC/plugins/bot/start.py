@@ -126,7 +126,7 @@ async def start_pm(client, message: Message, _):
 
         # Context-aware welcome customization for Cloned bot
         welcome_img = random.choice(NEXIO)
-        welcome_caption = _["start_2"].format(message.from_user.mention, app.mention)
+        welcome_caption = _["start_2"].format(message.from_user.mention, app.mention, config.SUPPORT_CHANNEL)
 
         try:
             from SONALI_MUSIC.utils.database_clone import get_clone_by_id
