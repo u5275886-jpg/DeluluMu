@@ -1,15 +1,26 @@
 from os import path
+import os
 import yt_dlp
 from yt_dlp.utils import DownloadError
 
-ytdl = yt_dlp.YoutubeDL(
-    {
-        "outtmpl": "downloads/%(id)s.%(ext)s",
-        "format": "bestaudio[ext=m4a]",
-        "geo_bypass": True,
-        "nocheckcertificate": True,
-    }
- )
+def get_cookie_file() -> str:
+    if os.path.exists("cookies/cookies.txt"):
+        return "cookies/cookies.txt"
+    elif os.path.exists("SONALI_MUSIC/assets/cookies.txt"):
+        return "SONALI_MUSIC/assets/cookies.txt"
+    return None
+
+ytdl_opts = {
+    "outtmpl": "downloads/%(id)s.%(ext)s",
+    "format": "bestaudio[ext=m4a]",
+    "geo_bypass": True,
+    "nocheckcertificate": True,
+}
+cookiefile = get_cookie_file()
+if cookiefile:
+    ytdl_opts["cookiefile"] = cookiefile
+
+ytdl = yt_dlp.YoutubeDL(ytdl_opts)
 
 
 def download(url: str, my_hook) -> str:       
@@ -21,6 +32,8 @@ def download(url: str, my_hook) -> str:
         'quiet': True,
         'no_warnings': True,
     }
+    if cookiefile:
+        ydl_optssx["cookiefile"] = cookiefile
     info = ytdl.extract_info(url, False)
     try:
         x = yt_dlp.YoutubeDL(ydl_optssx)

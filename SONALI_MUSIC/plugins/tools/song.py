@@ -241,7 +241,12 @@ async def song_download_cb(client, CallbackQuery, _):
     stype, format_id, vidid = callback_request.split("|")
     mystic = await CallbackQuery.edit_message_text(_["song_8"])
     yturl = f"https://www.youtube.com/watch?v={vidid}"
-    with yt_dlp.YoutubeDL({"quiet": True}) as ytdl:
+    ydl_opts = {"quiet": True}
+    if os.path.exists("cookies/cookies.txt"):
+        ydl_opts["cookiefile"] = "cookies/cookies.txt"
+    elif os.path.exists("SONALI_MUSIC/assets/cookies.txt"):
+        ydl_opts["cookiefile"] = "SONALI_MUSIC/assets/cookies.txt"
+    with yt_dlp.YoutubeDL(ydl_opts) as ytdl:
         x = ytdl.extract_info(yturl, download=False)
     title = (x["title"]).title()
     title = re.sub("\W+", " ", title)
