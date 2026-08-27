@@ -28,6 +28,14 @@ def find_downloaded_file(video_id: str) -> str:
     return None
 
 
+def get_cookie_file() -> str:
+    if os.path.exists("cookies/cookies.txt"):
+        return "cookies/cookies.txt"
+    elif os.path.exists("SONALI_MUSIC/assets/cookies.txt"):
+        return "SONALI_MUSIC/assets/cookies.txt"
+    return None
+
+
 def download_song_ytdlp(video_id: str) -> str:
     try:
         import yt_dlp
@@ -39,6 +47,9 @@ def download_song_ytdlp(video_id: str) -> str:
             "quiet": True,
             "no_warnings": True,
         }
+        cookiefile = get_cookie_file()
+        if cookiefile:
+            ydl_opts["cookiefile"] = cookiefile
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             info = ydl.extract_info(f"https://www.youtube.com/watch?v={video_id}", download=True)
             filename = ydl.prepare_filename(info)
@@ -63,6 +74,9 @@ def download_video_ytdlp(video_id: str) -> str:
             "quiet": True,
             "no_warnings": True,
         }
+        cookiefile = get_cookie_file()
+        if cookiefile:
+            ydl_opts["cookiefile"] = cookiefile
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             info = ydl.extract_info(f"https://www.youtube.com/watch?v={video_id}", download=True)
             filename = ydl.prepare_filename(info)
@@ -278,6 +292,9 @@ class YouTubeAPI:
         if "&" in link:
             link = link.split("&")[0]
         ytdl_opts = {"quiet": True}
+        cookiefile = get_cookie_file()
+        if cookiefile:
+            ytdl_opts["cookiefile"] = cookiefile
         ydl = yt_dlp.YoutubeDL(ytdl_opts)
         with ydl:
             formats_available = []
