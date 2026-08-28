@@ -75,7 +75,7 @@ def aq_markup(_, chat_id):
         ],
         [
             InlineKeyboardButton(
-                text="• ᴊσɪη ησω •", url=f"https://t.me/your_fairytale07"
+                text="• ᴊσɪη ησω •", url=f"{config.SUPPORT_CHANNEL}"
             ),
             InlineKeyboardButton(
                 text="• ɢʀᴏᴜᴘ ᴄʜᴀᴛ •", url=f"https://t.me/Xbroze"

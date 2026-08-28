@@ -112,7 +112,7 @@ class BUTTONS(object):
     ABUTTON = [
         [
             InlineKeyboardButton("⌯ sυᴘᴘσʀᴛ ⌯", url="https://t.me/Xbroze"),
-            InlineKeyboardButton("⌯ υᴘᴅᴧᴛєs ⌯", url="https://t.me/your_fairytale07"),
+            InlineKeyboardButton("⌯ υᴘᴅᴧᴛєs ⌯", url=config.SUPPORT_CHANNEL),
         ],
         [
             InlineKeyboardButton("⌯ ʙᴧᴄᴋ ⌯", callback_data="settingsback_helper"),
